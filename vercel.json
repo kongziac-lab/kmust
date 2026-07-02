@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/integrations/students/sync",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/integrations/classes/sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/integrations/attendance/sync",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
