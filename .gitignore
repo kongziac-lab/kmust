@@ -24,6 +24,8 @@
 .DS_Store
 *.pem
 *.xlsx
+/data/*.sqlite
+/data/*.sqlite-*
 
 # debug
 npm-debug.log*

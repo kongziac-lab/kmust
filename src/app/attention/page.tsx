@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { buildDashboardSummary } from "@/lib/summary";
 
+export const dynamic = "force-dynamic";
+
 const riskLabel = {
   low: "낮음",
   medium: "주의",

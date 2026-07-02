@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { getStudents } from "@/lib/data";
+import { getDataSourceInfo, getStudents } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
 
 type DistributionItem = {
   name: string;
@@ -133,6 +135,7 @@ function DataTable({ title, items }: { title: string; items: DistributionItem[] 
 
 export default function AnalyticsPage() {
   const students = getStudents();
+  const dataSource = getDataSourceInfo();
   const nationalities = countBy(students, (student) => student.nationality);
   const grades = countBy(students, (student) => (student.grade ? `${student.grade}학년` : "미상"));
   const departments = countBy(students, (student) => student.department);
@@ -156,6 +159,11 @@ export default function AnalyticsPage() {
             <p className="mt-3 break-keep-all text-[#c9d1ff]">
               국가, 학년, 전공, 성적분포를 기준으로 외국인학생 구성을 살펴봅니다.
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-xs font-semibold text-[#c9d1ff] ring-1 ring-white/10">
+              <span className="h-2 w-2 rounded-full bg-[#77e4e6]" />
+              {dataSource.label} · {dataSource.recordCount.toLocaleString("ko-KR")}명
+              {dataSource.importedAt ? ` · ${dataSource.importedAt}` : ""}
+            </div>
           </div>
           <div className="rounded-xl bg-[#211452] px-5 py-4 text-right ring-1 ring-white/10">
             <div className="text-sm text-[#9aa6d6]">분석 기준 학생</div>

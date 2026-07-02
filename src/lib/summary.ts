@@ -1,4 +1,4 @@
-import { getAttendanceEvents, getClassSessions, getStudents } from "@/lib/data";
+import { getAttendanceEvents, getClassSessions, getDataSourceInfo, getStudents } from "@/lib/data";
 import { assessRisk, runAttendanceHarness, runClassHarness, runStudentHarness } from "@/lib/harness";
 import type { AttendanceEvent, Student } from "@/lib/types";
 
@@ -47,6 +47,7 @@ export function buildDashboardSummary() {
 
   return {
     generatedAt: new Date().toISOString(),
+    dataSource: getDataSourceInfo(),
     metrics: {
       totalStudents: students.length,
       activeStudents: activeStudents.length,

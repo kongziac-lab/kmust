@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:import": "py scripts/import_excel_to_sqlite.py"
   },
   "dependencies": {
     "next": "16.2.10",

@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { buildDashboardSummary } from "@/lib/summary";
 
+export const dynamic = "force-dynamic";
+
 const menu = [
   { label: "Dashboard", href: "/" },
   { label: "현황 분석", href: "/analytics" },
