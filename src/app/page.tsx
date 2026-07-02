@@ -2,7 +2,13 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 import { buildDashboardSummary } from "@/lib/summary";
 
-const menu = ["Dashboard", "출결 모니터링", "위험 평가", "보험·어학", "동기화 설정"];
+const menu = [
+  { label: "Dashboard", href: "/" },
+  { label: "현황 분석", href: "/analytics" },
+  { label: "주의 학생", href: "/attention" },
+  { label: "출결 모니터링", href: "/" },
+  { label: "보험·어학", href: "/" },
+];
 
 function Shell({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -38,14 +44,15 @@ function Sidebar() {
       <div className="mt-7 text-xs font-semibold uppercase tracking-[0.14em] text-[#9aa6d6]">Menu</div>
       <nav className="mt-3 space-y-1">
         {menu.map((item, index) => (
-          <span
-            key={item}
+          <Link
+            key={item.label}
+            href={item.href}
             className={`block rounded-md px-4 py-3 text-sm transition-smooth ${
               index === 0 ? "bg-[#6b50e8] text-white shadow-[0_14px_36px_-20px_rgba(110,87,255,0.95)]" : "text-[#c9d1ff] hover:bg-white/8"
             }`}
           >
-            {item}
-          </span>
+            {item.label}
+          </Link>
         ))}
       </nav>
 
@@ -229,6 +236,9 @@ export default function Home() {
                   </div>
                   <Link href="/attention" className="block rounded-lg bg-[#6b50e8] p-3 text-center text-sm font-bold transition-smooth hover:scale-[1.02] active:scale-[0.98]">
                     주의 학생 페이지로 이동
+                  </Link>
+                  <Link href="/analytics" className="block rounded-lg bg-white/8 p-3 text-center text-sm font-bold transition-smooth hover:bg-white/14">
+                    학생 현황 분석 보기
                   </Link>
                 </div>
               </article>
