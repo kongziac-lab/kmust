@@ -24,7 +24,7 @@ type DistributionItem = {
 const primaryModes: { label: string; mode: Mode }[] = [
   { label: "총괄보기", mode: "overview" },
   { label: "출결상황", mode: "attendance" },
-  { label: "현황", mode: "status" },
+  { label: "현황보기", mode: "status" },
   { label: "인증지표", mode: "certification" },
 ];
 
@@ -33,13 +33,13 @@ const statusModes: { label: string; mode: Mode }[] = [
   { label: "국가별", mode: "nationality" },
   { label: "학과별", mode: "department" },
   { label: "학년별", mode: "grade" },
-  { label: "남여별", mode: "gender" },
+  { label: "남녀별", mode: "gender" },
 ];
 
 const certificationModes: { label: string; mode: Mode }[] = [
-  { label: "보험상황", mode: "insurance" },
-  { label: "토픽상황", mode: "topik" },
-  { label: "중도탈락", mode: "dropout" },
+  { label: "중도탈락율", mode: "dropout" },
+  { label: "토픽취득율", mode: "topik" },
+  { label: "보험가입율", mode: "insurance" },
   { label: "상담비율", mode: "counseling" },
 ];
 
@@ -68,6 +68,13 @@ function formatNumber(value: number) {
 
 function formatPercent(value: number) {
   return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
+}
+
+function getDegreeDropoutThreshold(totalStudents: number) {
+  if (totalStudents < 100) return 8;
+  if (totalStudents < 500) return 7;
+  if (totalStudents < 1000) return 6.5;
+  return 6;
 }
 
 function getModeTitle(mode: Mode) {
@@ -362,9 +369,9 @@ function Overview({ summary }: { summary: DashboardSummary }) {
 
       <Panel title="인증지표 요약">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MiniStat label="보험 유효율" value={formatPercent(summary.metrics.insuranceCoverageRate)} />
-          <MiniStat label="TOPIK 보유율" value={formatPercent(summary.metrics.topikRate)} />
-          <MiniStat label="중도탈락" value={formatNumber(summary.metrics.dropoutStudents)} />
+          <MiniStat label="중도탈락율" value={formatPercent(summary.metrics.dropoutRate)} />
+          <MiniStat label="토픽취득율" value={formatPercent(summary.metrics.topikRate)} />
+          <MiniStat label="보험가입율" value={formatPercent(summary.metrics.insuranceCoverageRate)} />
           <MiniStat label="상담비율" value={formatPercent(summary.metrics.counselingTargetRate)} />
         </div>
       </Panel>
@@ -424,12 +431,12 @@ function StatusView({ summary, mode }: { summary: DashboardSummary; mode: Mode }
     gender: summary.distributions.gender,
   };
   const titles: Record<string, string> = {
-    status: "현황",
+    status: "현황보기",
     program: "과정별 현황",
     nationality: "국가별 현황",
     department: "학과별 현황",
     grade: "학년별 현황",
-    gender: "남여별 현황",
+    gender: "남녀별 현황",
   };
   const items = itemsByMode[mode] || itemsByMode.status;
 
@@ -446,55 +453,182 @@ function StatusView({ summary, mode }: { summary: DashboardSummary; mode: Mode }
   );
 }
 
-function CertificationView({ summary, mode }: { summary: DashboardSummary; mode: Mode }) {
-  const itemsByMode: Record<string, DistributionItem[]> = {
-    certification: summary.distributions.insurance,
-    insurance: summary.distributions.insurance,
-    topik: summary.distributions.topik,
-    dropout: summary.distributions.dropout,
-    counseling: summary.distributions.counseling,
+type CertificationMode = "dropout" | "topik" | "insurance" | "counseling";
+
+type CertificationIndicator = {
+  mode: CertificationMode;
+  title: string;
+  value: string;
+  count: string;
+  criterion: string;
+  formula: string;
+  evidence: string;
+  note: string;
+  status: string;
+  tone: "blue" | "amber" | "red" | "green";
+  items: DistributionItem[];
+};
+
+function getCertificationIndicators(summary: DashboardSummary): CertificationIndicator[] {
+  const totalStudents = summary.metrics.totalStudents;
+  const dropoutThreshold = getDegreeDropoutThreshold(totalStudents);
+
+  return [
+    {
+      mode: "dropout",
+      title: "중도탈락율",
+      value: formatPercent(summary.metrics.dropoutRate),
+      count: `${formatNumber(summary.metrics.dropoutStudents)} / ${formatNumber(totalStudents)}명`,
+      criterion: `문서 기준: ${formatPercent(dropoutThreshold)} 미만`,
+      formula: "(분자) 중도탈락 학생 수 / (분모) 외국인 재적학생 수",
+      evidence: "대학정보공시 4-바-2 외국인 유학생 중도탈락률",
+      note: "학위과정 C. 유학생 관리 및 성과 기준",
+      status: summary.metrics.dropoutRate < dropoutThreshold ? "기준 충족" : "관리 필요",
+      tone: summary.metrics.dropoutRate < dropoutThreshold ? "green" : "red",
+      items: summary.distributions.dropout,
+    },
+    {
+      mode: "topik",
+      title: "토픽취득율",
+      value: formatPercent(summary.metrics.topikRate),
+      count: `${formatNumber(summary.metrics.topikStudents)} / ${formatNumber(totalStudents)}명`,
+      criterion: "문서 기준: TOPIK 등 공인 언어능력 40% 이상",
+      formula: "(분자) TOPIK 등 공인 언어능력 충족 학생 수 / (분모) 외국인 유학생 수",
+      evidence: "신입생 및 재학생 TOPIK 성적, 입학서류, 졸업요건 증빙",
+      note: "현재 데이터는 TOPIK 보유 항목을 기준으로 산출",
+      status: summary.metrics.topikRate >= 40 ? "기준 충족" : "관리 필요",
+      tone: summary.metrics.topikRate >= 40 ? "green" : "red",
+      items: summary.distributions.topik,
+    },
+    {
+      mode: "insurance",
+      title: "보험가입율",
+      value: formatPercent(summary.metrics.insuranceCoverageRate),
+      count: `${formatNumber(summary.metrics.activeInsurance)} / ${formatNumber(totalStudents)}명`,
+      criterion: "문서 기준: 의료보험 가입률 95% 이상",
+      formula: "(분자) 보험 가입·유효 학생 수 / (분모) 외국인 유학생 수",
+      evidence: "외국인 어학연수생이 가입 중인 의료보험 현황",
+      note: `만료 30일 이내 ${formatNumber(summary.metrics.insuranceDue)}명`,
+      status: summary.metrics.insuranceCoverageRate >= 95 ? "기준 충족" : "관리 필요",
+      tone: summary.metrics.insuranceCoverageRate >= 95 ? "green" : "red",
+      items: summary.distributions.insurance,
+    },
+    {
+      mode: "counseling",
+      title: "상담비율",
+      value: formatPercent(summary.metrics.counselingTargetRate),
+      count: `${formatNumber(summary.metrics.counselingTargets)} / ${formatNumber(totalStudents)}명`,
+      criterion: "문서 기준: 상담(정신건강) 포함 관리 3점 이상",
+      formula: "(분자) 상담 우선관리 학생 수 / (분모) 외국인 유학생 수",
+      evidence: "만족도 조사 결과보고서, 상담(정신건강) 포함 관리계획",
+      note: "정량 기준이 아닌 정성 관리 지표로 별도 증빙 필요",
+      status: "정성 관리",
+      tone: "amber",
+      items: summary.distributions.counseling,
+    },
+  ];
+}
+
+function IndicatorCard({
+  active,
+  indicator,
+}: {
+  active: boolean;
+  indicator: CertificationIndicator;
+}) {
+  const activeTone = {
+    blue: "border-[#6aa8ff]/45 bg-[#0d1c2d]",
+    amber: "border-[#e8c46a]/45 bg-[#29220e]",
+    red: "border-[#f07188]/45 bg-[#2b1118]",
+    green: "border-[#80d88a]/45 bg-[#102517]",
   };
-  const titles: Record<string, string> = {
-    certification: "인증지표",
-    insurance: "보험상황",
-    topik: "토픽상황",
-    dropout: "중도탈락",
-    counseling: "상담비율",
-  };
-  const items = itemsByMode[mode] || itemsByMode.certification;
 
   return (
-    <div className="grid min-h-0 gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <MetricTile
-          title="보험 유효율"
-          value={formatPercent(summary.metrics.insuranceCoverageRate)}
-          caption={`만료 30일 이내 ${formatNumber(summary.metrics.insuranceDue)}명`}
-          tone="green"
-        />
-        <MetricTile
-          title="TOPIK 보유율"
-          value={formatPercent(summary.metrics.topikRate)}
-          caption={`TOPIK ${formatNumber(summary.metrics.topikStudents)}명 · 어학연수 ${formatNumber(summary.metrics.languageTrainingCompleted)}명`}
-          tone="blue"
-        />
-        <MetricTile
-          title="중도탈락"
-          value={formatNumber(summary.metrics.dropoutStudents)}
-          caption={`전체 대비 ${formatPercent(summary.metrics.dropoutRate)}`}
-          tone={summary.metrics.dropoutStudents > 0 ? "red" : "green"}
-        />
-        <MetricTile
-          title="상담비율"
-          value={formatPercent(summary.metrics.counselingTargetRate)}
-          caption={`상담 우선 ${formatNumber(summary.metrics.counselingTargets)}명`}
-          tone={summary.metrics.counselingTargets > 0 ? "amber" : "green"}
-        />
+    <button
+      type="submit"
+      name="mode"
+      value={indicator.mode}
+      aria-pressed={active}
+      className={`min-h-40 rounded-lg border p-4 text-left transition-smooth ${
+        active
+          ? activeTone[indicator.tone]
+          : "border-white/10 bg-white/5 hover:border-[#47d7c6]/35 hover:bg-white/8"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-sm font-black text-white">{indicator.title}</div>
+        <span className="shrink-0 rounded-md bg-black/24 px-2 py-1 text-[11px] font-black text-[#dce8ed]">
+          {indicator.status}
+        </span>
+      </div>
+      <div className="mt-4 font-mono text-4xl font-black leading-none text-white xl:text-5xl">
+        {indicator.value}
+      </div>
+      <div className="mt-3 font-mono text-sm font-black text-[#47d7c6]">{indicator.count}</div>
+      <div className="mt-3 text-xs font-semibold leading-5 text-[#9eb0bb]">{indicator.criterion}</div>
+    </button>
+  );
+}
+
+function CertificationDetail({ indicator }: { indicator: CertificationIndicator }) {
+  return (
+    <div className="grid gap-3">
+      <div className="rounded-md bg-white/6 p-3">
+        <div className="text-xs font-bold text-[#718691]">선택 지표</div>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+          <div className="text-2xl font-black text-white">{indicator.title}</div>
+          <div className="font-mono text-3xl font-black text-[#47d7c6]">{indicator.value}</div>
+        </div>
       </div>
 
-      <Panel title={titles[mode] || "인증지표"}>
-        <BigBars items={items} limit={6} />
-      </Panel>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <MiniStat label="기준" value={indicator.criterion.replace("문서 기준: ", "")} />
+        <MiniStat label="상태" value={indicator.status} />
+      </div>
+
+      <div className="space-y-2 text-sm leading-6 text-[#c8d5dc]">
+        <div>
+          <span className="font-black text-white">산식</span>
+          <span className="ml-2">{indicator.formula}</span>
+        </div>
+        <div>
+          <span className="font-black text-white">증빙</span>
+          <span className="ml-2">{indicator.evidence}</span>
+        </div>
+        <div>
+          <span className="font-black text-white">참고</span>
+          <span className="ml-2">{indicator.note}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CertificationView({ summary, mode }: { summary: DashboardSummary; mode: Mode }) {
+  const indicators = getCertificationIndicators(summary);
+  const selected = indicators.find((indicator) => indicator.mode === mode) || indicators[0];
+
+  return (
+    <div className="grid min-h-0 gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {indicators.map((indicator) => (
+          <IndicatorCard
+            key={indicator.mode}
+            active={selected.mode === indicator.mode}
+            indicator={indicator}
+          />
+        ))}
+      </div>
+
+      <div className="grid min-h-0 gap-4">
+        <Panel title="교육국제화역량 인증제 추진계획">
+          <CertificationDetail indicator={selected} />
+        </Panel>
+
+        <Panel title={`${selected.title} 현황`}>
+          <ProgressRows items={selected.items} limit={6} />
+        </Panel>
+      </div>
     </div>
   );
 }

@@ -30,15 +30,16 @@ test("monitor dashboard exposes the requested mode buttons", async () => {
   const expectedLabels = [
     "총괄보기",
     "출결상황",
+    "현황보기",
     "과정별",
     "국가별",
     "학과별",
     "학년별",
-    "남여별",
+    "남녀별",
     "인증지표",
-    "보험상황",
-    "토픽상황",
-    "중도탈락",
+    "중도탈락율",
+    "토픽취득율",
+    "보험가입율",
     "상담비율",
   ];
 
@@ -53,4 +54,30 @@ test("monitor dashboard defaults to the overview mode", async () => {
 
   const html = response.body;
   assert.match(html, /aria-pressed="true"[^>]*>총괄보기/);
+});
+
+test("certification mode renders document-based indicator management", async () => {
+  const response = await getHtml(`${baseUrl}/?mode=certification`);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "교육국제화역량 인증제 추진계획",
+    "중도탈락율",
+    "토픽취득율",
+    "보험가입율",
+    "상담비율",
+    "6% 미만",
+    "40% 이상",
+    "95% 이상",
+    "3점 이상",
+    "중도탈락 학생 수",
+    "TOPIK",
+    "의료보험 가입률",
+    "상담\\(정신건강\\)",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(text), `${text} should be rendered`);
+  }
 });
