@@ -22,6 +22,24 @@ function isWithin(date: string | null, days: number) {
   return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
 }
 
+function isActiveInsurance(student: Student) {
+  if (!student.insuranceEndDate) return false;
+  return new Date(`${student.insuranceEndDate}T23:59:59+09:00`).getTime() >= Date.now();
+}
+
+function hasTopik(student: Student) {
+  return student.languageCertificate.toLowerCase().includes("topik");
+}
+
+function isDropoutStatus(status: string) {
+  return /중도|탈락|자퇴|제적|퇴학/.test(status);
+}
+
+function toPercent(value: number, total: number) {
+  if (total === 0) return 0;
+  return Math.round((value / total) * 1000) / 10;
+}
+
 function attendanceFor(student: Student, attendance: AttendanceEvent[]) {
   return attendance.filter((event) => event.studentNo === student.studentNo);
 }
@@ -34,11 +52,18 @@ export function buildDashboardSummary() {
   const todayAbsent = attendance.filter((event) => event.status === "absent").length;
   const todayLate = attendance.filter((event) => event.status === "late").length;
   const todayPresent = attendance.filter((event) => event.status === "present").length;
+  const todayExcused = attendance.filter((event) => event.status === "excused").length;
   const activeStudents = students.filter((student) => student.academicStatus === "재학");
   const insuranceDue = students.filter((student) => isWithin(student.insuranceEndDate, 30)).length;
   const languageDue = students.filter((student) => isWithin(student.languageCertificateValidUntil, 60)).length;
   const highRisk = risks.filter((risk) => risk.overallGrade === "high").length;
   const mediumRisk = risks.filter((risk) => risk.overallGrade === "medium").length;
+  const activeInsurance = students.filter(isActiveInsurance).length;
+  const missingInsurance = students.length - activeInsurance;
+  const topikStudents = students.filter(hasTopik).length;
+  const languageTrainingCompleted = students.filter((student) => student.languageTrainingCompleted).length;
+  const dropoutStudents = students.filter((student) => isDropoutStatus(student.academicStatus)).length;
+  const counselingTargets = highRisk + mediumRisk;
   const harnessRuns = [
     runStudentHarness(students),
     runClassHarness(classes),
@@ -52,23 +77,53 @@ export function buildDashboardSummary() {
       totalStudents: students.length,
       activeStudents: activeStudents.length,
       todayClasses: classes.length,
+      attendanceEvents: attendance.length,
       todayAbsent,
       todayLate,
       todayPresent,
+      todayExcused,
       attendanceRate:
         attendance.length === 0 ? 0 : Math.round(((todayPresent + todayLate) / attendance.length) * 1000) / 10,
       highRisk,
       mediumRisk,
       insuranceDue,
       languageDue,
+      activeInsurance,
+      missingInsurance,
+      insuranceCoverageRate: toPercent(activeInsurance, students.length),
+      topikStudents,
+      topikRate: toPercent(topikStudents, students.length),
+      languageTrainingCompleted,
+      dropoutStudents,
+      dropoutRate: toPercent(dropoutStudents, students.length),
+      counselingTargets,
+      counselingTargetRate: toPercent(counselingTargets, students.length),
     },
     distributions: {
       academicStatus: countBy(students, (student) => student.academicStatus),
+      program: countBy(students, (student) => student.program),
       nationality: countBy(students, (student) => student.nationality).slice(0, 10),
       college: countBy(students, (student) => student.college).slice(0, 10),
       department: countBy(students, (student) => student.department).slice(0, 12),
       grade: countBy(students, (student) => (student.grade ? `${student.grade}학년` : "미상")),
+      gender: countBy(students, (student) => student.gender || "미상"),
       scholarship: countBy(students, (student) => student.scholarshipName).slice(0, 10),
+      insurance: countBy(students, (student) => {
+        if (isWithin(student.insuranceEndDate, 30)) return "만료 예정";
+        if (isActiveInsurance(student)) return "보험 유효";
+        return "확인 필요";
+      }),
+      topik: countBy(students, (student) => {
+        if (hasTopik(student)) return "TOPIK 보유";
+        if (student.languageTrainingCompleted) return "어학연수 이수";
+        if (student.languageCertificate && student.languageCertificate !== "미상") return "기타 어학";
+        return "확인 필요";
+      }),
+      dropout: countBy(students, (student) => (isDropoutStatus(student.academicStatus) ? "중도탈락" : "재학/기타")),
+      counseling: [
+        { name: "상담 우선", value: counselingTargets },
+        { name: "일반 모니터링", value: Math.max(students.length - counselingTargets, 0) },
+      ],
       risk: countBy(risks, (risk) => risk.overallGrade),
     },
     recentClasses: classes,
@@ -83,3 +138,5 @@ export function buildDashboardSummary() {
     harnessRuns,
   };
 }
+
+export type DashboardSummary = ReturnType<typeof buildDashboardSummary>;
