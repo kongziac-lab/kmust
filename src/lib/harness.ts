@@ -110,7 +110,7 @@ export function runStudentHarness(students: Student[]): HarnessRun {
 
   const steps = [
     step("source_fetch", "success", `${students.length.toLocaleString("ko-KR")}명 학생 seed/API 수집`),
-    step("schema_validate", errors.length ? "failed" : "success", "담당교원 필드 없이 학생 스키마 검증"),
+    step("schema_validate", errors.length ? "failed" : "success", "학생 운영 스키마 검증"),
     step("normalize", "success", "엑셀 날짜 serial 및 숫자 필드 정규화 완료"),
     step("deduplicate", seen.size === students.length ? "success" : "warning", "학번 기준 중복 검사"),
     step("quality_check", warnings.length ? "warning" : "success", `${warnings.length}건 품질 경고`),
@@ -132,7 +132,7 @@ export function runClassHarness(classes: ClassSession[]): HarnessRun {
   const steps = [
     step("source_fetch", "success", `${classes.length}개 수업 수집`),
     step("schema_validate", warnings.length ? "warning" : "success", "과목/분반·수업일시·강의실 스키마 검증"),
-    step("normalize", "success", "담당교원 데이터는 저장 대상에서 제외"),
+    step("normalize", "success", "수업 운영 필드 정규화 완료"),
     step("deduplicate", "success", "원천 수업 ID 기준 중복 검사 완료"),
     step("quality_check", warnings.length ? "warning" : "success", `${warnings.length}건 품질 경고`),
     step("metric_build", "success", "오늘 수업 현황 지표 생성"),

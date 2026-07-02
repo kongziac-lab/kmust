@@ -1,3 +1,4 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css");
 @import "tailwindcss";
 
 :root {
@@ -8,7 +9,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Pretendard Variable", "Pretendard", "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
 }
 
@@ -22,10 +23,61 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  font-family: "Pretendard Variable", "Pretendard", "Geist", ui-sans-serif, system-ui, sans-serif;
 }
 
 button,
 select,
 input {
   font: inherit;
+}
+
+.transition-smooth {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.noise-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.85) 1px, transparent 0);
+  background-size: 18px 18px;
+}
+
+.reveal {
+  animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.reveal:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.reveal:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+
+  .transition-smooth {
+    transition: none;
+  }
 }

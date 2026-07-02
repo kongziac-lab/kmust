@@ -33,7 +33,7 @@ async function syncClasses() {
     return NextResponse.json({
       source: process.env.LMS_CLASSES_API_URL ? "lms-api" : "fixture",
       persisted: false,
-      privacy: "담당교원 관련 필드는 수집 응답에 있어도 제거했습니다.",
+      privacy: "수업 운영에 필요한 최소 필드만 반환합니다.",
       classes,
       harness,
     });
