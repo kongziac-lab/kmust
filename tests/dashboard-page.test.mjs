@@ -39,7 +39,6 @@ test("monitor dashboard exposes the requested mode buttons", async () => {
     "국가별",
     "학과별",
     "학년별",
-    "남녀별",
     "인증지표",
     "중도탈락율",
     "토픽취득율",
@@ -50,6 +49,8 @@ test("monitor dashboard exposes the requested mode buttons", async () => {
   for (const label of expectedLabels) {
     assert.match(html, new RegExp(label), `${label} label should be rendered`);
   }
+
+  assert.doesNotMatch(html, /남녀별/, "남녀별 mode should be removed");
 });
 
 test("monitor dashboard defaults to the overview mode", async () => {
@@ -123,6 +124,27 @@ test("attendance mode renders absence threshold counts and student lists", async
   for (const text of expectedContent) {
     assert.match(html, new RegExp(text), `${text} should be rendered`);
   }
+});
+
+test("status mode renders one-page status overview without gender mode", async () => {
+  const response = await getHtml(`${baseUrl}/?mode=status`);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "과정별 현황",
+    "국가별 현황",
+    "학과별 현황",
+    "학년별 현황",
+    "status-overview-grid",
+    "status-overview-panel",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered`);
+  }
+
+  assert.doesNotMatch(html, /남녀별/, "gender status mode should not be rendered");
 });
 
 test("attendance and certification modes use bounded monitor layouts", async () => {
