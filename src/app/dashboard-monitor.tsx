@@ -219,6 +219,69 @@ function Gauge({ value, label }: { value: number; label: string }) {
   );
 }
 
+function AttendanceSummaryBlock({
+  title,
+  rate,
+  total,
+  present,
+  late,
+  absent,
+  excused,
+}: {
+  title: string;
+  rate: number;
+  total: number;
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+}) {
+  return (
+    <div className="rounded-md bg-white/6 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs font-black text-[#81949e]">{title}</div>
+          <div className="mt-2 font-mono text-3xl font-black text-white">{formatPercent(rate)}</div>
+        </div>
+        <div className="shrink-0 text-right text-xs font-semibold leading-5 text-[#7f939f]">
+          {formatNumber(total)}건
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-4 gap-2">
+        <MiniStat label="출석" value={formatNumber(present)} />
+        <MiniStat label="지각" value={formatNumber(late)} />
+        <MiniStat label="결석" value={formatNumber(absent)} />
+        <MiniStat label="공결" value={formatNumber(excused)} />
+      </div>
+    </div>
+  );
+}
+
+function AbsenceThresholdSummary({ summary }: { summary: DashboardSummary }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <MetricTile
+        title="3과목 이상"
+        value={formatNumber(summary.metrics.absenceOver3)}
+        caption="출결 관찰 대상"
+        tone={summary.metrics.absenceOver3 > 0 ? "amber" : "green"}
+      />
+      <MetricTile
+        title="5과목 이상"
+        value={formatNumber(summary.metrics.absenceOver5)}
+        caption="집중 상담 권장"
+        tone={summary.metrics.absenceOver5 > 0 ? "red" : "green"}
+      />
+      <MetricTile
+        title="7과목 이상"
+        value={formatNumber(summary.metrics.absenceOver7)}
+        caption="즉시 확인 대상"
+        tone={summary.metrics.absenceOver7 > 0 ? "red" : "green"}
+      />
+    </div>
+  );
+}
+
 function ProgressRows({
   items,
   limit = 8,
@@ -259,6 +322,45 @@ function ProgressRows({
   );
 }
 
+function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSummary; limit?: number }) {
+  const targets = summary.absenceWatchStudents
+    .filter((item) => item.absentCount >= 3)
+    .slice(0, limit);
+
+  if (targets.length === 0) {
+    return (
+      <div className="rounded-md bg-white/6 p-4 text-sm font-semibold text-[#9eb0bb]">
+        최근 1주일 기준 출결 관찰 대상 없음
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {targets.map((item) => (
+        <div
+          key={item.student.studentNo}
+          className="grid gap-3 rounded-md bg-white/6 px-3 py-3 sm:grid-cols-[1fr_auto]"
+        >
+          <div className="min-w-0">
+            <div className="truncate text-sm font-black text-white">
+              {item.student.studentNo} · {item.student.department || item.student.program}
+            </div>
+            <div className="mt-1 truncate text-xs font-semibold text-[#81949e]">
+              결석 과목 {item.courseNames.join(", ") || "미확인"}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-right">
+            <MiniStat label="결석" value={formatNumber(item.absentCount)} />
+            <MiniStat label="지각" value={formatNumber(item.lateCount)} />
+            <MiniStat label="공결" value={formatNumber(item.excusedCount)} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function BigBars({ items, limit = 10 }: { items: DistributionItem[]; limit?: number }) {
   const shown = items.slice(0, limit);
   const max = Math.max(...shown.map((item) => item.value), 1);
@@ -281,10 +383,10 @@ function BigBars({ items, limit = 10 }: { items: DistributionItem[]; limit?: num
   );
 }
 
-function RecentClasses({ summary }: { summary: DashboardSummary }) {
+function RecentClasses({ summary, limit = 6 }: { summary: DashboardSummary; limit?: number }) {
   return (
     <div className="space-y-2">
-      {summary.recentClasses.slice(0, 6).map((session) => (
+      {summary.recentClasses.slice(0, limit).map((session) => (
         <div key={session.id} className="flex items-center justify-between gap-3 rounded-md bg-white/6 px-3 py-2">
           <div className="min-w-0">
             <div className="truncate text-sm font-bold text-white">{session.courseName}</div>
@@ -309,7 +411,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
 
   return (
     <div className="grid min-h-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <MetricTile
           title="전체 학생"
           value={formatNumber(summary.metrics.totalStudents)}
@@ -326,6 +428,18 @@ function Overview({ summary }: { summary: DashboardSummary }) {
           value={formatPercent(summary.metrics.attendanceRate)}
           caption={`${formatNumber(summary.metrics.attendanceEvents)}건 출결 이벤트`}
           tone="blue"
+        />
+        <MetricTile
+          title="최근 1주일 출석률"
+          value={formatPercent(summary.metrics.weeklyAttendanceRate)}
+          caption={`${formatNumber(summary.metrics.weeklyAttendanceEvents)}건 출결 이벤트`}
+          tone="teal"
+        />
+        <MetricTile
+          title="출결 관찰 대상"
+          value={formatNumber(summary.metrics.attendanceObservationTargets)}
+          caption={`3과목 이상 결석 · 5과목 ${formatNumber(summary.metrics.absenceOver5)}명 · 7과목 ${formatNumber(summary.metrics.absenceOver7)}명`}
+          tone={summary.metrics.attendanceObservationTargets > 0 ? "amber" : "green"}
         />
         <MetricTile
           title="주의 학생"
@@ -348,13 +462,32 @@ function Overview({ summary }: { summary: DashboardSummary }) {
           </button>
         }
       >
-        <div className="grid gap-4 sm:grid-cols-[0.9fr_1.1fr]">
-          <Gauge value={summary.metrics.attendanceRate} label="Attendance" />
-          <div className="grid content-center gap-3">
-            <MiniStat label="출석" value={formatNumber(summary.metrics.todayPresent)} />
-            <MiniStat label="지각" value={formatNumber(summary.metrics.todayLate)} />
-            <MiniStat label="결석" value={formatNumber(summary.metrics.todayAbsent)} />
-            <MiniStat label="공결" value={formatNumber(summary.metrics.todayExcused)} />
+        <div className="grid gap-3">
+          <AttendanceSummaryBlock
+            title="오늘 출결"
+            rate={summary.metrics.attendanceRate}
+            total={summary.metrics.attendanceEvents}
+            present={summary.metrics.todayPresent}
+            late={summary.metrics.todayLate}
+            absent={summary.metrics.todayAbsent}
+            excused={summary.metrics.todayExcused}
+          />
+          <AttendanceSummaryBlock
+            title="최근 1주일 출결"
+            rate={summary.metrics.weeklyAttendanceRate}
+            total={summary.metrics.weeklyAttendanceEvents}
+            present={summary.metrics.weeklyPresent}
+            late={summary.metrics.weeklyLate}
+            absent={summary.metrics.weeklyAbsent}
+            excused={summary.metrics.weeklyExcused}
+          />
+          <div>
+            <div className="mb-2 text-xs font-black text-[#81949e]">출결 관찰 대상</div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <MiniStat label="3과목 이상" value={formatNumber(summary.metrics.absenceOver3)} />
+              <MiniStat label="5과목 이상" value={formatNumber(summary.metrics.absenceOver5)} />
+              <MiniStat label="7과목 이상" value={formatNumber(summary.metrics.absenceOver7)} />
+            </div>
           </div>
         </div>
       </Panel>
@@ -381,42 +514,53 @@ function Overview({ summary }: { summary: DashboardSummary }) {
 
 function AttendanceView({ summary }: { summary: DashboardSummary }) {
   return (
-    <div className="grid min-h-0 gap-4 xl:grid-cols-[0.85fr_1.15fr]">
-      <Panel title="출결상황">
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <Gauge value={summary.metrics.attendanceRate} label="Today" />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MetricTile
-              title="출석"
-              value={formatNumber(summary.metrics.todayPresent)}
-              caption="정상 체크인"
-              tone="green"
-            />
-            <MetricTile
-              title="지각"
-              value={formatNumber(summary.metrics.todayLate)}
-              caption="수업 시작 후 체크인"
-              tone="amber"
-            />
-            <MetricTile
-              title="결석"
-              value={formatNumber(summary.metrics.todayAbsent)}
-              caption="미확인 출결"
-              tone="red"
-            />
-            <MetricTile
-              title="공결"
-              value={formatNumber(summary.metrics.todayExcused)}
-              caption="사유 등록"
-              tone="blue"
+    <div className="grid min-h-0 gap-4 xl:grid-cols-[0.82fr_1.18fr]">
+      <div className="grid min-h-0 gap-4">
+        <Panel title="출결상황">
+          <div className="grid gap-4">
+            <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
+              <Gauge value={summary.metrics.attendanceRate} label="Today" />
+              <AttendanceSummaryBlock
+                title="오늘 출결"
+                rate={summary.metrics.attendanceRate}
+                total={summary.metrics.attendanceEvents}
+                present={summary.metrics.todayPresent}
+                late={summary.metrics.todayLate}
+                absent={summary.metrics.todayAbsent}
+                excused={summary.metrics.todayExcused}
+              />
+            </div>
+            <AttendanceSummaryBlock
+              title="최근 1주일 출결"
+              rate={summary.metrics.weeklyAttendanceRate}
+              total={summary.metrics.weeklyAttendanceEvents}
+              present={summary.metrics.weeklyPresent}
+              late={summary.metrics.weeklyLate}
+              absent={summary.metrics.weeklyAbsent}
+              excused={summary.metrics.weeklyExcused}
             />
           </div>
-        </div>
-      </Panel>
+        </Panel>
 
-      <Panel title="오늘 수업">
-        <RecentClasses summary={summary} />
-      </Panel>
+        <Panel title="오늘 수업">
+          <RecentClasses summary={summary} limit={3} />
+        </Panel>
+      </div>
+
+      <div className="grid min-h-0 gap-4">
+        <Panel title="결석 누적 관찰">
+          <div className="grid gap-4">
+            <div className="text-sm font-semibold leading-6 text-[#9eb0bb]">
+              최근 1주일 기준 결석 과목 수로 출결 관찰 대상을 분류합니다.
+            </div>
+            <AbsenceThresholdSummary summary={summary} />
+          </div>
+        </Panel>
+
+        <Panel title="관찰 대상 리스트">
+          <AbsenceObservationList summary={summary} limit={5} />
+        </Panel>
+      </div>
     </div>
   );
 }

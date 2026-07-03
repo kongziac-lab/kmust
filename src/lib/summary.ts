@@ -40,19 +40,130 @@ function toPercent(value: number, total: number) {
   return Math.round((value / total) * 1000) / 10;
 }
 
+function eventTime(event: AttendanceEvent) {
+  return new Date(event.checkedAt || event.syncedAt).getTime();
+}
+
+function startOfDay(date: Date) {
+  const copy = new Date(date);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+}
+
+function endOfDay(date: Date) {
+  const copy = new Date(date);
+  copy.setHours(23, 59, 59, 999);
+  return copy;
+}
+
+function isSameDay(event: AttendanceEvent, date: Date) {
+  const time = eventTime(event);
+  return time >= startOfDay(date).getTime() && time <= endOfDay(date).getTime();
+}
+
+function isWithinCalendarDays(event: AttendanceEvent, date: Date, days: number) {
+  const start = startOfDay(date);
+  start.setDate(start.getDate() - (days - 1));
+  const time = eventTime(event);
+  return time >= start.getTime() && time <= endOfDay(date).getTime();
+}
+
+function summarizeAttendance(attendance: AttendanceEvent[]) {
+  const present = attendance.filter((event) => event.status === "present").length;
+  const late = attendance.filter((event) => event.status === "late").length;
+  const absent = attendance.filter((event) => event.status === "absent").length;
+  const excused = attendance.filter((event) => event.status === "excused").length;
+
+  return {
+    total: attendance.length,
+    present,
+    late,
+    absent,
+    excused,
+    rate: attendance.length === 0 ? 0 : Math.round(((present + late) / attendance.length) * 1000) / 10,
+  };
+}
+
 function attendanceFor(student: Student, attendance: AttendanceEvent[]) {
   return attendance.filter((event) => event.studentNo === student.studentNo);
+}
+
+function buildAbsenceWatchStudents(
+  students: Student[],
+  attendance: AttendanceEvent[],
+  classes: ReturnType<typeof getClassSessions>,
+) {
+  const studentByNo = new Map(students.map((student) => [student.studentNo, student]));
+  const classById = new Map(classes.map((session) => [session.id, session]));
+  const byStudent = new Map<
+    string,
+    {
+      absentCount: number;
+      lateCount: number;
+      excusedCount: number;
+      courseNames: Set<string>;
+    }
+  >();
+
+  for (const event of attendance) {
+    if (event.status !== "absent" && event.status !== "late" && event.status !== "excused") {
+      continue;
+    }
+
+    const item =
+      byStudent.get(event.studentNo) ||
+      {
+        absentCount: 0,
+        lateCount: 0,
+        excusedCount: 0,
+        courseNames: new Set<string>(),
+      };
+
+    if (event.status === "absent") {
+      item.absentCount += 1;
+      item.courseNames.add(classById.get(event.classId)?.courseName || event.classId);
+    } else if (event.status === "late") {
+      item.lateCount += 1;
+    } else {
+      item.excusedCount += 1;
+    }
+
+    byStudent.set(event.studentNo, item);
+  }
+
+  return [...byStudent.entries()]
+    .map(([studentNo, item]) => {
+      const student = studentByNo.get(studentNo);
+      if (!student) return null;
+
+      return {
+        student,
+        absentCount: item.absentCount,
+        lateCount: item.lateCount,
+        excusedCount: item.excusedCount,
+        courseNames: [...item.courseNames].slice(0, 4),
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .filter((item) => item.absentCount > 0)
+    .sort(
+      (a, b) =>
+        b.absentCount - a.absentCount ||
+        b.lateCount - a.lateCount ||
+        a.student.studentNo.localeCompare(b.student.studentNo, "ko-KR"),
+    );
 }
 
 export function buildDashboardSummary() {
   const students = getStudents();
   const classes = getClassSessions();
   const attendance = getAttendanceEvents();
+  const now = new Date();
+  const todayAttendance = attendance.filter((event) => isSameDay(event, now));
+  const weeklyAttendance = attendance.filter((event) => isWithinCalendarDays(event, now, 7));
+  const todaySummary = summarizeAttendance(todayAttendance);
+  const weeklySummary = summarizeAttendance(weeklyAttendance);
   const risks = students.map((student) => assessRisk(student, attendanceFor(student, attendance)));
-  const todayAbsent = attendance.filter((event) => event.status === "absent").length;
-  const todayLate = attendance.filter((event) => event.status === "late").length;
-  const todayPresent = attendance.filter((event) => event.status === "present").length;
-  const todayExcused = attendance.filter((event) => event.status === "excused").length;
   const activeStudents = students.filter((student) => student.academicStatus === "재학");
   const insuranceDue = students.filter((student) => isWithin(student.insuranceEndDate, 30)).length;
   const languageDue = students.filter((student) => isWithin(student.languageCertificateValidUntil, 60)).length;
@@ -64,6 +175,10 @@ export function buildDashboardSummary() {
   const languageTrainingCompleted = students.filter((student) => student.languageTrainingCompleted).length;
   const dropoutStudents = students.filter((student) => isDropoutStatus(student.academicStatus)).length;
   const counselingTargets = highRisk + mediumRisk;
+  const absenceWatchStudents = buildAbsenceWatchStudents(students, weeklyAttendance, classes);
+  const absenceOver3 = absenceWatchStudents.filter((item) => item.absentCount >= 3).length;
+  const absenceOver5 = absenceWatchStudents.filter((item) => item.absentCount >= 5).length;
+  const absenceOver7 = absenceWatchStudents.filter((item) => item.absentCount >= 7).length;
   const harnessRuns = [
     runStudentHarness(students),
     runClassHarness(classes),
@@ -77,13 +192,22 @@ export function buildDashboardSummary() {
       totalStudents: students.length,
       activeStudents: activeStudents.length,
       todayClasses: classes.length,
-      attendanceEvents: attendance.length,
-      todayAbsent,
-      todayLate,
-      todayPresent,
-      todayExcused,
-      attendanceRate:
-        attendance.length === 0 ? 0 : Math.round(((todayPresent + todayLate) / attendance.length) * 1000) / 10,
+      attendanceEvents: todaySummary.total,
+      todayAbsent: todaySummary.absent,
+      todayLate: todaySummary.late,
+      todayPresent: todaySummary.present,
+      todayExcused: todaySummary.excused,
+      attendanceRate: todaySummary.rate,
+      weeklyAttendanceEvents: weeklySummary.total,
+      weeklyAbsent: weeklySummary.absent,
+      weeklyLate: weeklySummary.late,
+      weeklyPresent: weeklySummary.present,
+      weeklyExcused: weeklySummary.excused,
+      weeklyAttendanceRate: weeklySummary.rate,
+      absenceOver3,
+      absenceOver5,
+      absenceOver7,
+      attendanceObservationTargets: absenceOver3,
       highRisk,
       mediumRisk,
       insuranceDue,
@@ -135,6 +259,7 @@ export function buildDashboardSummary() {
       }))
       .filter((item) => item.risk.overallGrade !== "low")
       .slice(0, 12),
+    absenceWatchStudents,
     harnessRuns,
   };
 }

@@ -155,6 +155,12 @@ function todayAt(hour: number, minute = 0) {
   return date.toISOString();
 }
 
+function shiftDays(value: string, daysAgo: number) {
+  const date = new Date(value);
+  date.setDate(date.getDate() - daysAgo);
+  return date;
+}
+
 export function getStudents() {
   return readStudentsFromDatabase() ?? seedStudents;
 }
@@ -172,35 +178,43 @@ export function getClassSessions(): ClassSession[] {
 }
 
 export function getAttendanceEvents(): AttendanceEvent[] {
-  const now = new Date().toISOString();
   const classes = getClassSessions();
   const activeStudents = getStudents()
     .filter((student) => student.academicStatus === "재학")
     .slice(0, 480);
+  const days = Array.from({ length: 7 }, (_, index) => index);
 
   return activeStudents.flatMap((student, studentIndex) =>
-    classes.slice(0, 3).map((session, classIndex) => {
-      const marker = (studentIndex * 7 + classIndex * 11) % 100;
-      const status =
-        marker < 8 ? "absent" : marker < 18 ? "late" : marker < 21 ? "excused" : "present";
-      const checkedAt =
-        status === "absent"
-          ? null
-          : new Date(
-              new Date(session.scheduledAt).getTime() + (status === "late" ? 14 : 1) * 60_000,
-            ).toISOString();
+    days.flatMap((daysAgo) =>
+      classes.map((session, classIndex) => {
+        const scheduledAt = shiftDays(session.scheduledAt, daysAgo);
+        const absenceBoost = studentIndex % 31 === 0 ? 12 : studentIndex % 17 === 0 ? 6 : 0;
+        const marker = (studentIndex * 7 + classIndex * 11 + daysAgo * 13) % 100;
+        const status =
+          marker < 8 + absenceBoost
+            ? "absent"
+            : marker < 18 + absenceBoost
+              ? "late"
+              : marker < 21 + absenceBoost
+                ? "excused"
+                : "present";
+        const checkedAt =
+          status === "absent"
+            ? null
+            : new Date(scheduledAt.getTime() + (status === "late" ? 14 : 1) * 60_000).toISOString();
 
-      return {
-        id: `ATT-${student.studentNo}-${session.id}`,
-        studentNo: student.studentNo,
-        classId: session.id,
-        status,
-        checkedAt,
-        reason: status === "excused" ? "공결" : status === "absent" ? "미확인" : null,
-        sourceSystem: "fixture",
-        syncedAt: now,
-      } satisfies AttendanceEvent;
-    }),
+        return {
+          id: `ATT-${student.studentNo}-${session.id}-D${daysAgo}`,
+          studentNo: student.studentNo,
+          classId: session.id,
+          status,
+          checkedAt,
+          reason: status === "excused" ? "공결" : status === "absent" ? "미확인" : null,
+          sourceSystem: "fixture",
+          syncedAt: scheduledAt.toISOString(),
+        } satisfies AttendanceEvent;
+      }),
+    ),
   );
 }
 

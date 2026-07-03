@@ -81,3 +81,42 @@ test("certification mode renders document-based indicator management", async () 
     assert.match(html, new RegExp(text), `${text} should be rendered`);
   }
 });
+
+test("overview renders today and weekly attendance observation summaries", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "오늘 출결",
+    "최근 1주일 출결",
+    "출결 관찰 대상",
+    "3과목 이상",
+    "5과목 이상",
+    "7과목 이상",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(text), `${text} should be rendered`);
+  }
+});
+
+test("attendance mode renders absence threshold counts and student lists", async () => {
+  const response = await getHtml(`${baseUrl}/?mode=attendance`);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "결석 누적 관찰",
+    "3과목 이상",
+    "5과목 이상",
+    "7과목 이상",
+    "관찰 대상 리스트",
+    "결석 과목",
+    "최근 1주일",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(text), `${text} should be rendered`);
+  }
+});
