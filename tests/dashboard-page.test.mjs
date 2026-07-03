@@ -158,6 +158,7 @@ test("status mode renders one-page status overview without gender mode", async (
     "학년별 현황",
     "status-overview-grid",
     "status-overview-panel",
+    "상세내역",
   ];
 
   for (const text of expectedContent) {
@@ -165,6 +166,34 @@ test("status mode renders one-page status overview without gender mode", async (
   }
 
   assert.doesNotMatch(html, /남녀별/, "gender status mode should not be rendered");
+});
+
+test("status category modes render detailed breakdowns", async () => {
+  const cases = [
+    ["program", "과정별 상세내역", "학사과정"],
+    ["nationality", "국가별 상세내역", "베트남"],
+    ["department", "학과별 상세내역", "경영학과"],
+    ["grade", "학년별 상세내역", "1학년"],
+  ];
+
+  for (const [mode, title, sampleItem] of cases) {
+    const response = await getHtml(`${baseUrl}/?mode=${mode}`);
+    assert.equal(response.status, 200);
+
+    const html = response.body;
+    const expectedContent = [
+      title,
+      sampleItem,
+      "status-detail-grid",
+      "status-detail-row",
+      "분포 순위",
+      "상세내역",
+    ];
+
+    for (const text of expectedContent) {
+      assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered for ${mode}`);
+    }
+  }
 });
 
 test("attendance and certification modes use bounded monitor layouts", async () => {

@@ -548,26 +548,104 @@ function AttendanceView({ summary }: { summary: DashboardSummary }) {
 function StatusOverviewPanel({
   title,
   items,
+  mode,
   limit = 6,
 }: {
   title: string;
   items: DistributionItem[];
+  mode: Mode;
   limit?: number;
 }) {
   return (
-    <Panel title={title} className="status-overview-panel">
+    <Panel
+      title={title}
+      className="status-overview-panel"
+      action={
+        <button
+          type="submit"
+          name="mode"
+          value={mode}
+          className="rounded-md bg-white/8 px-3 py-2 text-xs font-bold text-[#dce8ed] transition-smooth hover:bg-white/12"
+        >
+          상세내역
+        </button>
+      }
+    >
       <ProgressRows items={items} limit={limit} />
     </Panel>
   );
 }
 
-function StatusView({ summary }: { summary: DashboardSummary }) {
+function getStatusDetailConfig(summary: DashboardSummary, mode: Mode) {
+  const configs: Record<string, { title: string; items: DistributionItem[]; limit: number }> = {
+    program: { title: "과정별", items: summary.distributions.program, limit: 8 },
+    nationality: { title: "국가별", items: summary.distributions.nationality, limit: 12 },
+    department: { title: "학과별", items: summary.distributions.department, limit: 12 },
+    grade: { title: "학년별", items: summary.distributions.grade, limit: 10 },
+  };
+
+  return configs[mode] || null;
+}
+
+function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: number }) {
+  const shown = items.slice(0, limit);
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  const max = Math.max(...shown.map((item) => item.value), 1);
+
+  return (
+    <div className="grid h-full min-h-0 gap-2 overflow-y-auto pr-1">
+      {shown.map((item, index) => {
+        const percent = total === 0 ? 0 : (item.value / total) * 100;
+
+        return (
+          <div
+            key={item.name}
+            className="status-detail-row grid gap-3 rounded-md border border-white/[0.05] bg-white/[0.045] px-3 py-2.5 sm:grid-cols-[auto_1fr_auto]"
+          >
+            <div className="font-mono text-xs font-black text-[#47d7c6]">{String(index + 1).padStart(2, "0")}</div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-black text-white">{item.name}</div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#47d7c6] via-[#6aa8ff] to-[#e8c46a]"
+                  style={{ width: `${Math.max((item.value / max) * 100, 3)}%` }}
+                />
+              </div>
+            </div>
+            <div className="text-right font-mono text-sm font-black text-[#47d7c6]">
+              {formatNumber(item.value)}
+              <div className="mt-1 text-xs text-[#81949e]">{percent.toFixed(1)}%</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StatusView({ summary, mode }: { summary: DashboardSummary; mode: Mode }) {
+  const detail = getStatusDetailConfig(summary, mode);
+
+  if (detail) {
+    return (
+      <div className="monitor-grid status-detail-grid grid h-full min-h-0 gap-3 xl:grid-cols-[0.82fr_1.18fr]">
+        <Panel title="분포 순위">
+          <ProgressRows items={detail.items} limit={Math.min(detail.limit, 8)} />
+        </Panel>
+
+        <Panel title={`${detail.title} 상세내역`}>
+          <StatusDetailRows items={detail.items} limit={detail.limit} />
+        </Panel>
+      </div>
+    );
+  }
+
   return (
     <div className="monitor-grid status-overview-grid grid h-full min-h-0 gap-3 md:grid-cols-2 md:grid-rows-[repeat(2,minmax(0,1fr))]">
-      <StatusOverviewPanel title="과정별 현황" items={summary.distributions.program} limit={5} />
-      <StatusOverviewPanel title="국가별 현황" items={summary.distributions.nationality} limit={5} />
-      <StatusOverviewPanel title="학과별 현황" items={summary.distributions.department} limit={6} />
-      <StatusOverviewPanel title="학년별 현황" items={summary.distributions.grade} limit={6} />
+      <StatusOverviewPanel title="과정별 현황" mode="program" items={summary.distributions.program} limit={5} />
+      <StatusOverviewPanel title="국가별 현황" mode="nationality" items={summary.distributions.nationality} limit={5} />
+      <StatusOverviewPanel title="학과별 현황" mode="department" items={summary.distributions.department} limit={6} />
+      <StatusOverviewPanel title="학년별 현황" mode="grade" items={summary.distributions.grade} limit={6} />
     </div>
   );
 }
@@ -826,7 +904,7 @@ function ActivePanel({
   }
 
   if (statusModeSet.has(activeMode)) {
-    return <StatusView summary={summary} />;
+    return <StatusView mode={activeMode} summary={summary} />;
   }
 
   if (certificationModeSet.has(activeMode)) {
