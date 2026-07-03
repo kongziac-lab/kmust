@@ -10,6 +10,7 @@ type DistributionItem = {
 };
 
 type ModeChangeHandler = (mode: Mode) => void;
+type EnrollmentFilter = "enrolled" | "active" | "leave";
 
 const primaryModes: { label: string; mode: Mode }[] = [
   { label: "총괄보기", mode: "overview" },
@@ -23,6 +24,13 @@ const statusModes: { label: string; mode: Mode }[] = [
   { label: "국가별", mode: "nationality" },
   { label: "학과별", mode: "department" },
   { label: "학년별", mode: "grade" },
+  { label: "과정·국가", mode: "programNationality" },
+];
+
+const enrollmentFilters: { label: string; value: EnrollmentFilter }[] = [
+  { label: "재적", value: "enrolled" },
+  { label: "재학", value: "active" },
+  { label: "휴학", value: "leave" },
 ];
 
 const certificationModes: { label: string; mode: Mode }[] = [
@@ -32,7 +40,7 @@ const certificationModes: { label: string; mode: Mode }[] = [
   { label: "상담비율", mode: "counseling" },
 ];
 
-const statusModeSet = new Set<Mode>(["status", "program", "nationality", "department", "grade"]);
+const statusModeSet = new Set<Mode>(["status", "program", "nationality", "department", "grade", "programNationality"]);
 const certificationModeSet = new Set<Mode>(["certification", "insurance", "topik", "dropout", "counseling"]);
 const dashboardSummaryEndpoint = "/api/dashboard/summary";
 const dashboardSummaryPollingMs = 10_000;
@@ -680,12 +688,62 @@ function StatusOverviewPanel({
   );
 }
 
-function getStatusDetailConfig(summary: DashboardSummary, mode: Mode) {
+type StatusGroup = DashboardSummary["statusGroups"][EnrollmentFilter];
+
+function getEnrollmentFilterTotal(summary: DashboardSummary, filter: EnrollmentFilter) {
+  return summary.statusGroups[filter].total;
+}
+
+function EnrollmentStatusToggle({
+  activeFilter,
+  onFilterChange,
+  summary,
+}: {
+  activeFilter: EnrollmentFilter;
+  onFilterChange: (filter: EnrollmentFilter) => void;
+  summary: DashboardSummary;
+}) {
+  return (
+    <div className="status-filter-bar flex min-h-0 items-center justify-between gap-3 rounded-lg border border-white/[0.08] bg-[#0b151b]/92 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+      <div className="min-w-0">
+        <div className="text-base font-black text-white">재적현황</div>
+        <div className="mt-1 font-mono text-xs font-bold text-[#7f939f]">
+          {formatNumber(getEnrollmentFilterTotal(summary, activeFilter))}명
+        </div>
+      </div>
+      <div className="grid shrink-0 grid-cols-3 gap-1 rounded-md bg-black/22 p-1" role="group" aria-label="재적현황 보기">
+        {enrollmentFilters.map((item) => {
+          const active = activeFilter === item.value;
+
+          return (
+            <button
+              key={item.value}
+              type="button"
+              aria-pressed={active}
+              data-enrollment-filter-control="true"
+              data-enrollment-filter={item.value}
+              onClick={() => onFilterChange(item.value)}
+              className={`min-w-20 rounded px-3 py-2 text-xs font-black transition-smooth ${
+                active ? "bg-[#47d7c6] text-[#061116]" : "text-[#a8bbc6] hover:bg-white/8 hover:text-white"
+              }`}
+            >
+              <span>{item.label}</span>
+              <span className="ml-2 font-mono">{formatNumber(getEnrollmentFilterTotal(summary, item.value))}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function getStatusDetailConfig(group: StatusGroup, mode: Mode) {
   const configs: Record<string, { title: string; items: DistributionItem[]; limit: number }> = {
-    program: { title: "과정별", items: summary.distributions.program, limit: 8 },
-    nationality: { title: "국가별", items: summary.distributions.nationality, limit: 12 },
-    department: { title: "학과별", items: summary.distributions.department, limit: 12 },
-    grade: { title: "학년별", items: summary.distributions.grade, limit: 10 },
+    program: { title: "과정별", items: group.distributions.program, limit: 8 },
+    nationality: { title: "국가별", items: group.distributions.nationality, limit: 12 },
+    department: { title: "학과별", items: group.distributions.department, limit: 12 },
+    grade: { title: "학년별", items: group.distributions.grade, limit: 10 },
+    programNationality: { title: "과정 및 국가별", items: group.distributions.programNationality, limit: 14 },
   };
 
   return configs[mode] || null;
@@ -695,6 +753,14 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
   const shown = items.slice(0, limit);
   const total = items.reduce((sum, item) => sum + item.value, 0);
   const max = Math.max(...shown.map((item) => item.value), 1);
+
+  if (shown.length === 0) {
+    return (
+      <div className="grid h-full place-items-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.035] text-sm font-bold text-[#8fa2ad]">
+        대상 없음
+      </div>
+    );
+  }
 
   return (
     <div className="grid h-full min-h-0 gap-2 overflow-y-auto pr-1">
@@ -731,57 +797,83 @@ function StatusView({
   summary,
   mode,
   onModeChange,
+  enrollmentFilter,
+  onEnrollmentFilterChange,
 }: {
   summary: DashboardSummary;
   mode: Mode;
   onModeChange: ModeChangeHandler;
+  enrollmentFilter: EnrollmentFilter;
+  onEnrollmentFilterChange: (filter: EnrollmentFilter) => void;
 }) {
-  const detail = getStatusDetailConfig(summary, mode);
+  const group = summary.statusGroups[enrollmentFilter];
+  const detail = getStatusDetailConfig(group, mode);
 
   if (detail) {
     return (
-      <div className="monitor-grid status-detail-grid grid h-full min-h-0 gap-3 xl:grid-cols-[0.82fr_1.18fr]">
-        <Panel title="분포 순위">
-          <ProgressRows items={detail.items} limit={Math.min(detail.limit, 8)} />
-        </Panel>
+      <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[auto_minmax(0,1fr)]">
+        <EnrollmentStatusToggle
+          activeFilter={enrollmentFilter}
+          onFilterChange={onEnrollmentFilterChange}
+          summary={summary}
+        />
+        <div className="monitor-grid status-detail-grid grid h-full min-h-0 gap-3 xl:grid-cols-[0.82fr_1.18fr]">
+          <Panel title="분포 순위">
+            <ProgressRows items={detail.items} limit={Math.min(detail.limit, 8)} />
+          </Panel>
 
-        <Panel title={`${detail.title} 상세내역`}>
-          <StatusDetailRows items={detail.items} limit={detail.limit} />
-        </Panel>
+          <Panel title={`${detail.title} 상세내역`}>
+            <StatusDetailRows items={detail.items} limit={detail.limit} />
+          </Panel>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="monitor-grid status-overview-grid grid h-full min-h-0 gap-3 md:grid-cols-2 md:grid-rows-[repeat(2,minmax(0,1fr))]">
-      <StatusOverviewPanel
-        title="과정별 현황"
-        mode="program"
-        onModeChange={onModeChange}
-        items={summary.distributions.program}
-        limit={5}
+    <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[auto_minmax(0,1fr)]">
+      <EnrollmentStatusToggle
+        activeFilter={enrollmentFilter}
+        onFilterChange={onEnrollmentFilterChange}
+        summary={summary}
       />
-      <StatusOverviewPanel
-        title="국가별 현황"
-        mode="nationality"
-        onModeChange={onModeChange}
-        items={summary.distributions.nationality}
-        limit={5}
-      />
-      <StatusOverviewPanel
-        title="학과별 현황"
-        mode="department"
-        onModeChange={onModeChange}
-        items={summary.distributions.department}
-        limit={6}
-      />
-      <StatusOverviewPanel
-        title="학년별 현황"
-        mode="grade"
-        onModeChange={onModeChange}
-        items={summary.distributions.grade}
-        limit={6}
-      />
+      <div className="monitor-grid status-overview-grid grid h-full min-h-0 gap-3 md:grid-cols-2 xl:grid-cols-3 xl:grid-rows-[repeat(2,minmax(0,1fr))]">
+        <StatusOverviewPanel
+          title="과정별 현황"
+          mode="program"
+          onModeChange={onModeChange}
+          items={group.distributions.program}
+          limit={5}
+        />
+        <StatusOverviewPanel
+          title="국가별 현황"
+          mode="nationality"
+          onModeChange={onModeChange}
+          items={group.distributions.nationality}
+          limit={5}
+        />
+        <StatusOverviewPanel
+          title="학과별 현황"
+          mode="department"
+          onModeChange={onModeChange}
+          items={group.distributions.department}
+          limit={6}
+        />
+        <StatusOverviewPanel
+          title="학년별 현황"
+          mode="grade"
+          onModeChange={onModeChange}
+          items={group.distributions.grade}
+          limit={6}
+        />
+        <StatusOverviewPanel
+          title="과정 및 국가별 학생 현황"
+          mode="programNationality"
+          onModeChange={onModeChange}
+          items={group.distributions.programNationality}
+          limit={6}
+        />
+      </div>
     </div>
   );
 }
@@ -1049,10 +1141,14 @@ function CertificationView({
 
 function ActivePanel({
   activeMode,
+  enrollmentFilter,
+  onEnrollmentFilterChange,
   onModeChange,
   summary,
 }: {
   activeMode: Mode;
+  enrollmentFilter: EnrollmentFilter;
+  onEnrollmentFilterChange: (filter: EnrollmentFilter) => void;
   onModeChange: ModeChangeHandler;
   summary: DashboardSummary;
 }) {
@@ -1061,7 +1157,15 @@ function ActivePanel({
   }
 
   if (statusModeSet.has(activeMode)) {
-    return <StatusView mode={activeMode} onModeChange={onModeChange} summary={summary} />;
+    return (
+      <StatusView
+        enrollmentFilter={enrollmentFilter}
+        mode={activeMode}
+        onEnrollmentFilterChange={onEnrollmentFilterChange}
+        onModeChange={onModeChange}
+        summary={summary}
+      />
+    );
   }
 
   if (certificationModeSet.has(activeMode)) {
@@ -1073,6 +1177,7 @@ function ActivePanel({
 
 export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { activeMode: Mode; summary: DashboardSummary }) {
   const [activeMode, setActiveMode] = useState(initialActiveMode);
+  const [enrollmentFilter, setEnrollmentFilter] = useState<EnrollmentFilter>("enrolled");
   const [liveSummary, setLiveSummary] = useState(summary);
   const generatedAt = formatSeoulDateTime(liveSummary.generatedAt);
 
@@ -1174,7 +1279,13 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
         </header>
 
         <section className="dashboard-stage min-h-0 flex-1 py-3">
-          <ActivePanel activeMode={activeMode} onModeChange={handleModeChange} summary={liveSummary} />
+          <ActivePanel
+            activeMode={activeMode}
+            enrollmentFilter={enrollmentFilter}
+            onEnrollmentFilterChange={setEnrollmentFilter}
+            onModeChange={handleModeChange}
+            summary={liveSummary}
+          />
         </section>
       </div>
     </main>

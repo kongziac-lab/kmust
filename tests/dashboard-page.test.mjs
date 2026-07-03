@@ -39,6 +39,7 @@ test("monitor dashboard exposes the requested mode buttons", async () => {
     "국가별",
     "학과별",
     "학년별",
+    "과정·국가",
     "인증지표",
     "중도탈락율",
     "토픽취득율",
@@ -196,10 +197,19 @@ test("status mode renders one-page status overview without gender mode", async (
 
   const html = response.body;
   const expectedContent = [
+    "재적현황",
+    "data-enrollment-filter-control",
+    "data-enrollment-filter=\"enrolled\"",
+    "data-enrollment-filter=\"active\"",
+    "data-enrollment-filter=\"leave\"",
+    "재적",
+    "재학",
+    "휴학",
     "과정별 현황",
     "국가별 현황",
     "학과별 현황",
     "학년별 현황",
+    "과정 및 국가별 학생 현황",
     "status-overview-grid",
     "status-overview-panel",
     "상세내역",
@@ -218,6 +228,7 @@ test("status category modes render detailed breakdowns", async () => {
     ["nationality", "국가별 상세내역", "베트남"],
     ["department", "학과별 상세내역", "경영학과"],
     ["grade", "학년별 상세내역", "1학년"],
+    ["programNationality", "과정 및 국가별 상세내역", "학사과정 · 베트남"],
   ];
 
   for (const [mode, title, sampleItem] of cases) {
@@ -230,6 +241,7 @@ test("status category modes render detailed breakdowns", async () => {
       sampleItem,
       "status-detail-grid",
       "status-detail-row",
+      "data-enrollment-filter-control",
       "분포 순위",
       "상세내역",
     ];
@@ -238,6 +250,21 @@ test("status category modes render detailed breakdowns", async () => {
       assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered for ${mode}`);
     }
   }
+});
+
+test("dashboard summary exposes enrollment-filtered status distributions", async () => {
+  const response = await getHtml(`${baseUrl}/api/dashboard/summary`);
+  assert.equal(response.status, 200);
+
+  const summary = JSON.parse(response.body);
+  assert.equal(typeof summary.statusGroups.enrolled.total, "number");
+  assert.equal(typeof summary.statusGroups.active.total, "number");
+  assert.equal(typeof summary.statusGroups.leave.total, "number");
+  assert.equal(summary.statusGroups.enrolled.total, summary.statusGroups.active.total + summary.statusGroups.leave.total);
+
+  const combined = summary.statusGroups.enrolled.distributions.programNationality;
+  assert.equal(Array.isArray(combined), true);
+  assert.equal(combined.some((item) => item.name.includes(" · ") && item.value > 0), true);
 });
 
 test("attendance and certification modes use bounded monitor layouts", async () => {

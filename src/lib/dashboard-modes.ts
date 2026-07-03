@@ -6,6 +6,7 @@ export type Mode =
   | "nationality"
   | "department"
   | "grade"
+  | "programNationality"
   | "certification"
   | "insurance"
   | "topik"
@@ -20,6 +21,7 @@ export const dashboardModes = new Set<Mode>([
   "nationality",
   "department",
   "grade",
+  "programNationality",
   "certification",
   "insurance",
   "topik",

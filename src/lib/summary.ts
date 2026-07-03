@@ -35,6 +35,35 @@ function isDropoutStatus(status: string) {
   return /중도|탈락|자퇴|제적|퇴학/.test(status);
 }
 
+function isActiveAcademicStatus(status: string) {
+  return status === "재학";
+}
+
+function isLeaveAcademicStatus(status: string) {
+  return status === "휴학";
+}
+
+function isEnrolledAcademicStatus(status: string) {
+  return isActiveAcademicStatus(status) || isLeaveAcademicStatus(status);
+}
+
+function buildProgramNationalityName(student: Student) {
+  return `${student.program || "미상"} · ${student.nationality || "미상"}`;
+}
+
+function buildStatusGroup(students: Student[]) {
+  return {
+    total: students.length,
+    distributions: {
+      program: countBy(students, (student) => student.program),
+      nationality: countBy(students, (student) => student.nationality).slice(0, 10),
+      department: countBy(students, (student) => student.department).slice(0, 12),
+      grade: countBy(students, (student) => (student.grade ? `${student.grade}학년` : "미상")),
+      programNationality: countBy(students, buildProgramNationalityName).slice(0, 14),
+    },
+  };
+}
+
 function toPercent(value: number, total: number) {
   if (total === 0) return 0;
   return Math.round((value / total) * 1000) / 10;
@@ -181,7 +210,9 @@ export function buildDashboardSummary() {
   const todaySummary = summarizeAttendance(todayAttendance);
   const weeklySummary = summarizeAttendance(weeklyAttendance);
   const risks = students.map((student) => assessRisk(student, attendanceForStudent(attendanceByStudent, student.studentNo)));
-  const activeStudents = students.filter((student) => student.academicStatus === "재학");
+  const enrolledStudents = students.filter((student) => isEnrolledAcademicStatus(student.academicStatus));
+  const activeStudents = students.filter((student) => isActiveAcademicStatus(student.academicStatus));
+  const leaveStudents = students.filter((student) => isLeaveAcademicStatus(student.academicStatus));
   const insuranceDue = students.filter((student) => isWithin(student.insuranceEndDate, 30)).length;
   const languageDue = students.filter((student) => isWithin(student.languageCertificateValidUntil, 60)).length;
   const highRisk = risks.filter((risk) => risk.overallGrade === "high").length;
@@ -239,6 +270,11 @@ export function buildDashboardSummary() {
       dropoutRate: toPercent(dropoutStudents, students.length),
       counselingTargets,
       counselingTargetRate: toPercent(counselingTargets, students.length),
+    },
+    statusGroups: {
+      enrolled: buildStatusGroup(enrolledStudents),
+      active: buildStatusGroup(activeStudents),
+      leave: buildStatusGroup(leaveStudents),
     },
     distributions: {
       academicStatus: countBy(students, (student) => student.academicStatus),
