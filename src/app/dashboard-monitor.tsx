@@ -251,10 +251,10 @@ function ModeButton({
       data-mode-control="true"
       data-mode={mode}
       onClick={() => onModeChange(mode)}
-      className={`h-9 shrink-0 rounded-md px-3.5 text-sm font-bold transition-smooth ${
+      className={`electric-mode-button h-9 shrink-0 rounded-md px-3.5 text-sm font-bold transition-smooth ${
         active
-          ? "bg-[#47d7c6] text-[#061116] shadow-[0_0_32px_rgba(71,215,198,0.22)]"
-          : "bg-white/[0.06] text-[#b8c8d4] ring-1 ring-white/[0.08] hover:bg-white/[0.1] hover:text-white"
+          ? "bg-[#21b7ff] text-[#02111d] ring-1 ring-[#7bdcff]/55 shadow-[0_0_30px_rgba(33,183,255,0.28)]"
+          : "bg-[#071626]/80 text-[#9ab0bf] ring-1 ring-[#126cae]/32 hover:bg-[#0c2236] hover:text-[#f4fbff] hover:ring-[#24b8ff]/55"
       }`}
     >
       {label}
@@ -303,17 +303,17 @@ function MetricTile({
   tone?: "teal" | "blue" | "amber" | "red" | "green";
 }) {
   const tones = {
-    teal: "border-[#47d7c6]/35 bg-[#0d2426]",
-    blue: "border-[#6aa8ff]/35 bg-[#0d1c2d]",
-    amber: "border-[#e8c46a]/35 bg-[#29220e]",
-    red: "border-[#f07188]/35 bg-[#2b1118]",
-    green: "border-[#80d88a]/35 bg-[#102517]",
+    teal: "border-[#24b8ff]/45 bg-[#061b29]/88",
+    blue: "border-[#2f8cff]/45 bg-[#061527]/88",
+    amber: "border-[#e9c85c]/45 bg-[#211c0b]/88",
+    red: "border-[#ff4b6d]/45 bg-[#251019]/88",
+    green: "border-[#4edc96]/45 bg-[#082117]/88",
   };
 
   return (
-    <section className={`flex h-full min-h-0 flex-col rounded-lg border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${tones[tone]}`}>
-      <div className="text-sm font-semibold text-[#a9bac4]">{title}</div>
-      <div className="mt-auto pt-4 font-mono text-4xl font-black leading-none text-white xl:text-5xl">{value}</div>
+    <section className={`metric-tile flex h-full min-h-0 flex-col rounded-lg border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${tones[tone]}`}>
+      <div className="text-sm font-bold text-[#9db6c7]">{title}</div>
+      <div className="metric-value mt-auto pt-4 font-mono text-4xl font-black leading-none xl:text-5xl">{value}</div>
       <div className="mt-4 text-xs font-medium leading-5 text-[#7f939f]">{caption}</div>
     </section>
   );
@@ -321,7 +321,7 @@ function MetricTile({
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-white/[0.06] bg-white/[0.055] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+    <div className="tech-stat rounded-md border border-[#167fc9]/24 bg-[#081827]/78 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <div className="text-xs font-semibold text-[#7f949f]">{label}</div>
       <div className="mt-1.5 font-mono text-lg font-black leading-none text-white">{value}</div>
     </div>
@@ -340,9 +340,9 @@ function Panel({
   className?: string;
 }>) {
   return (
-    <section className={`monitor-panel flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-[#0b151b]/92 p-4 shadow-[0_26px_90px_-64px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.035)] ${className}`}>
+    <section className={`monitor-panel flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-[#176fae]/38 bg-[#061321]/88 p-4 ${className}`}>
       <div className="flex items-start justify-between gap-4">
-        <h2 className="text-lg font-black text-white">{title}</h2>
+        <h2 className="electric-panel-title text-lg font-black">{title}</h2>
         {action}
       </div>
       <div className="mt-3 min-h-0 flex-1 overflow-hidden">{children}</div>
@@ -354,13 +354,13 @@ function Gauge({ value, label }: { value: number; label: string }) {
   return (
     <div className="grid place-items-center">
       <div
-        className="grid aspect-square w-full max-w-56 place-items-center rounded-full bg-[conic-gradient(#47d7c6_0deg,#47d7c6_calc(var(--score)*3.6deg),rgba(255,255,255,0.08)_0deg)] p-4 shadow-[0_0_42px_rgba(71,215,198,0.12)]"
+        className="grid aspect-square w-full max-w-56 place-items-center rounded-full bg-[conic-gradient(#21b7ff_0deg,#21b7ff_calc(var(--score)*3.6deg),rgba(20,76,118,0.42)_0deg)] p-4 shadow-[0_0_42px_rgba(33,183,255,0.2)]"
         style={{ "--score": value } as CSSProperties}
       >
-        <div className="grid h-full w-full place-items-center rounded-full border border-white/[0.06] bg-[#071018] text-center">
+        <div className="grid h-full w-full place-items-center rounded-full border border-[#1686cf]/26 bg-[#020b15] text-center shadow-[inset_0_0_24px_rgba(33,183,255,0.08)]">
           <div>
             <div className="text-sm font-bold text-[#7f939f]">{label}</div>
-            <div className="mt-2 font-mono text-4xl font-black text-[#47d7c6]">{formatPercent(value)}</div>
+            <div className="mt-2 font-mono text-4xl font-black text-[#24b8ff]">{formatPercent(value)}</div>
           </div>
         </div>
       </div>
@@ -507,14 +507,14 @@ function ProgressRows({
           <div key={item.name}>
             <div className="flex items-center justify-between gap-4 text-sm">
               <span className="truncate font-semibold text-[#dce8ed]">{item.name}</span>
-              <span className="shrink-0 font-mono text-[#47d7c6]">
+              <span className="shrink-0 font-mono text-[#24b8ff]">
                 {formatNumber(item.value)}
                 {showPercent ? ` · ${percent.toFixed(1)}%` : ""}
               </span>
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/8">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#47d7c6] via-[#6aa8ff] to-[#e8c46a]"
+                className="h-full rounded-full bg-gradient-to-r from-[#21b7ff] via-[#38e6ff] to-[#e8c46a]"
                 style={{ width: `${Math.max((item.value / max) * 100, 3)}%` }}
               />
             </div>
@@ -596,7 +596,7 @@ function RecentClasses({ summary, limit = 6 }: { summary: DashboardSummary; limi
               {session.courseCode} · {session.room}
             </div>
           </div>
-          <div className="shrink-0 font-mono text-xs text-[#47d7c6]">
+          <div className="shrink-0 font-mono text-xs text-[#24b8ff]">
             {formatSeoulTime(session.scheduledAt)}
           </div>
         </div>
@@ -829,7 +829,7 @@ function EnrollmentStatusToggle({
               data-enrollment-filter={item.value}
               onClick={() => onFilterChange(item.value)}
               className={`min-w-20 rounded px-3 py-2 text-xs font-black transition-smooth ${
-                active ? "bg-[#47d7c6] text-[#061116]" : "text-[#a8bbc6] hover:bg-white/8 hover:text-white"
+                active ? "bg-[#21b7ff] text-[#02111d]" : "text-[#a8bbc6] hover:bg-white/8 hover:text-white"
               }`}
             >
               <span>{item.label}</span>
@@ -876,17 +876,17 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
             key={item.name}
             className="status-detail-row grid gap-3 rounded-md border border-white/[0.05] bg-white/[0.045] px-3 py-2.5 sm:grid-cols-[auto_1fr_auto]"
           >
-            <div className="font-mono text-xs font-black text-[#47d7c6]">{String(index + 1).padStart(2, "0")}</div>
+            <div className="font-mono text-xs font-black text-[#24b8ff]">{String(index + 1).padStart(2, "0")}</div>
             <div className="min-w-0">
               <div className="truncate text-sm font-black text-white">{item.name}</div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#47d7c6] via-[#6aa8ff] to-[#e8c46a]"
+                  className="h-full rounded-full bg-gradient-to-r from-[#21b7ff] via-[#38e6ff] to-[#e8c46a]"
                   style={{ width: `${Math.max((item.value / max) * 100, 3)}%` }}
                 />
               </div>
             </div>
-            <div className="text-right font-mono text-sm font-black text-[#47d7c6]">
+            <div className="text-right font-mono text-sm font-black text-[#24b8ff]">
               {formatNumber(item.value)}
               <div className="mt-1 text-xs text-[#81949e]">{percent.toFixed(1)}%</div>
             </div>
@@ -916,7 +916,7 @@ function DimensionButton({
       onClick={onClick}
       className={`min-w-14 rounded px-2.5 py-2 text-xs font-black transition-smooth ${
         active
-          ? "bg-[#47d7c6] text-[#061116]"
+          ? "bg-[#21b7ff] text-[#02111d]"
           : "bg-white/[0.055] text-[#a9bac4] ring-1 ring-white/[0.06] hover:bg-white/[0.09] hover:text-white"
       } disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-white/[0.055] disabled:hover:text-[#a9bac4]`}
     >
@@ -999,7 +999,7 @@ function StatusFilterValueControl({
         value={effectiveValue}
         disabled={filterDimension === "all" || filterValues.length === 0}
         onChange={(event) => onFilterValueChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-white/[0.08] bg-white/[0.055] px-3 text-xs font-black text-[#dce8ed] outline-none transition-smooth focus:border-[#47d7c6]/65 disabled:opacity-55"
+        className="h-9 w-full rounded-md border border-white/[0.08] bg-white/[0.055] px-3 text-xs font-black text-[#dce8ed] outline-none transition-smooth focus:border-[#24b8ff]/65 disabled:opacity-55"
       >
         {filterDimension === "all" ? (
           <option value="">전체</option>
@@ -1083,12 +1083,12 @@ function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationR
             className="status-detail-row rounded-md border border-white/[0.05] bg-white/[0.045] px-3 py-2.5"
           >
             <div className="grid items-start gap-3 sm:grid-cols-[auto_1fr_auto]">
-              <div className="font-mono text-xs font-black text-[#47d7c6]">{String(index + 1).padStart(2, "0")}</div>
+              <div className="font-mono text-xs font-black text-[#24b8ff]">{String(index + 1).padStart(2, "0")}</div>
               <div className="min-w-0">
                 <div className="truncate text-sm font-black text-white">{row.name}</div>
                 <div className="mt-1 font-mono text-xs font-bold text-[#81949e]">{rowPercent.toFixed(1)}%</div>
               </div>
-              <div className="text-right font-mono text-sm font-black text-[#47d7c6]">{formatNumber(row.value)}명</div>
+              <div className="text-right font-mono text-sm font-black text-[#24b8ff]">{formatNumber(row.value)}명</div>
             </div>
 
             <div className="mt-3 grid gap-2">
@@ -1099,13 +1099,13 @@ function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationR
                   <div key={`${row.name}-${segment.name}`} className="grid gap-1">
                     <div className="flex items-center justify-between gap-3 text-xs">
                       <span className="truncate font-bold text-[#c8d5dc]">{segment.name}</span>
-                      <span className="shrink-0 font-mono font-black text-[#47d7c6]">
+                      <span className="shrink-0 font-mono font-black text-[#24b8ff]">
                         {formatNumber(segment.value)}명 · {segmentPercent.toFixed(1)}%
                       </span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#47d7c6] via-[#6aa8ff] to-[#e8c46a]"
+                        className="h-full rounded-full bg-gradient-to-r from-[#21b7ff] via-[#38e6ff] to-[#e8c46a]"
                         style={{ width: `${Math.max(segmentPercent, 3)}%` }}
                       />
                     </div>
@@ -1184,7 +1184,7 @@ function StatusCombinationView({
             <div className="rounded-md border border-white/[0.05] bg-white/[0.05] px-3 py-2">
               <div className="text-xs font-black text-[#81949e]">조합분석</div>
               <div className="mt-1 text-lg font-black text-white">{title}</div>
-              <div className="mt-2 font-mono text-xs font-bold text-[#47d7c6]">
+              <div className="mt-2 font-mono text-xs font-bold text-[#24b8ff]">
                 {formatNumber(filteredRecords.length)}명 / {formatNumber(group.total)}명
               </div>
             </div>
@@ -1435,7 +1435,9 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
           }`}
         >
           <div className="flex items-start justify-between gap-2">
-            <div className="text-sm font-black text-[#c7d5dc]">{indicator.title}</div>
+            <div className="min-w-0 flex-1 whitespace-nowrap text-[clamp(0.72rem,0.82vw,0.875rem)] font-black text-[#c7d5dc]">
+              {indicator.title}
+            </div>
             <span
               className={`summary-status-badge shrink-0 rounded-md border px-2 py-1 text-[11px] font-black ${getStatusBadgeClass(indicator.status)}`}
             >
@@ -1448,7 +1450,7 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
               {indicator.value}
             </div>
             <div className="summary-count-ratio-row flex min-w-0 items-center justify-end rounded-md bg-black/14 px-2.5 py-1.5">
-              <span className="summary-count-ratio whitespace-nowrap text-right font-mono text-sm font-black leading-none text-[#47d7c6]">
+              <span className="summary-count-ratio whitespace-nowrap text-right font-mono text-sm font-black leading-none text-[#24b8ff]">
                 {indicator.count}
               </span>
             </div>
@@ -1492,7 +1494,7 @@ function IndicatorCard({
       className={`flex h-full min-h-0 flex-col rounded-lg border p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] transition-smooth ${
         active
           ? activeTone[indicator.tone]
-          : "border-white/[0.08] bg-white/[0.045] hover:border-[#47d7c6]/35 hover:bg-white/[0.07]"
+          : "border-white/[0.08] bg-white/[0.045] hover:border-[#24b8ff]/35 hover:bg-white/[0.07]"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1503,14 +1505,14 @@ function IndicatorCard({
       </div>
       <div className="mt-auto flex items-end justify-between gap-3 pt-3">
         <div className="font-mono text-4xl font-black leading-none text-white">{indicator.value}</div>
-        <div className="shrink-0 whitespace-nowrap font-mono text-sm font-black leading-none text-[#47d7c6]">
+        <div className="shrink-0 whitespace-nowrap font-mono text-sm font-black leading-none text-[#24b8ff]">
           {indicator.count}
         </div>
       </div>
       <div className="mt-3 text-xs font-semibold leading-5 text-[#9eb0bb]">{indicator.criterion}</div>
       <div className="indicator-progress mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-[#47d7c6] via-[#6aa8ff] to-[#e8c46a]"
+          className="h-full rounded-full bg-gradient-to-r from-[#21b7ff] via-[#38e6ff] to-[#e8c46a]"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -1525,7 +1527,7 @@ function CertificationDetail({ indicator }: { indicator: CertificationIndicator 
         <div className="text-xs font-bold text-[#718691]">선택 지표</div>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
           <div className="text-2xl font-black text-white">{indicator.title}</div>
-          <div className="font-mono text-3xl font-black text-[#47d7c6]">{indicator.value}</div>
+          <div className="font-mono text-3xl font-black text-[#24b8ff]">{indicator.value}</div>
         </div>
       </div>
 
@@ -1739,19 +1741,22 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
 
   return (
     <main
-      className="min-h-screen bg-[#070d12] text-white lg:h-screen lg:overflow-hidden"
+      className="dashboard-shell min-h-screen text-white lg:h-screen lg:overflow-hidden"
       data-live-summary-endpoint={dashboardSummaryEndpoint}
       data-live-summary-polling={dashboardSummaryPollingMs}
+      data-visual-reference="insurance-dashboard"
     >
-      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#070d12_0%,#0b171d_50%,#0b0f12_100%)]" />
-      <div className="noise-layer opacity-[0.02]" />
+      <div className="dashboard-ambient" />
+      <div className="dashboard-horizon" />
+      <div className="dashboard-scanline" />
+      <div className="noise-layer opacity-[0.03]" />
 
       <div className="flex min-h-screen flex-col px-3 py-3 sm:px-4 lg:h-screen">
-        <header className="shrink-0 border-b border-white/10 pb-2">
+        <header className="dashboard-header shrink-0 border-b border-[#1579bf]/36 pb-2">
           <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.2em] text-[#47d7c6]">KMUST Live Board</div>
-              <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white xl:text-4xl 2xl:text-[2.65rem]">
+              <div className="dashboard-kicker text-xs font-black uppercase">KMUST Live Board</div>
+              <h1 className="dashboard-title mt-0.5 text-3xl font-black xl:text-4xl 2xl:text-[2.65rem]">
                 외국인학생 현황 대시보드
               </h1>
             </div>

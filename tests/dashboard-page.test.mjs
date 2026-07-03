@@ -83,6 +83,30 @@ test("monitor dashboard polls the summary API without reloading the page", async
   assert.doesNotMatch(html, /location\.reload/, "dashboard should not use a full page reload for live updates");
 });
 
+test("monitor dashboard applies the reference-inspired visual system", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "data-visual-reference=\"insurance-dashboard\"",
+    "dashboard-shell",
+    "dashboard-ambient",
+    "dashboard-horizon",
+    "dashboard-scanline",
+    "dashboard-kicker",
+    "dashboard-title",
+    "electric-mode-button",
+    "electric-panel-title",
+    "metric-tile",
+    "tech-stat",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered`);
+  }
+});
+
 test("certification mode renders document-based indicator management", async () => {
   const response = await getHtml(`${baseUrl}/?mode=certification`);
   assert.equal(response.status, 200);
