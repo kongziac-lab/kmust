@@ -107,10 +107,10 @@ function ModeButton({
       name="mode"
       value={mode}
       aria-pressed={active}
-      className={`h-10 shrink-0 rounded-md px-4 text-sm font-bold transition-smooth ${
+      className={`h-9 shrink-0 rounded-md px-3.5 text-sm font-bold transition-smooth ${
         active
           ? "bg-[#47d7c6] text-[#061116] shadow-[0_0_32px_rgba(71,215,198,0.22)]"
-          : "bg-white/7 text-[#b8c8d4] ring-1 ring-white/10 hover:bg-white/12 hover:text-white"
+          : "bg-white/[0.06] text-[#b8c8d4] ring-1 ring-white/[0.08] hover:bg-white/[0.1] hover:text-white"
       }`}
     >
       {label}
@@ -164,7 +164,7 @@ function MetricTile({
   };
 
   return (
-    <section className={`flex h-full min-h-0 flex-col rounded-lg border p-4 ${tones[tone]}`}>
+    <section className={`flex h-full min-h-0 flex-col rounded-lg border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${tones[tone]}`}>
       <div className="text-sm font-semibold text-[#a9bac4]">{title}</div>
       <div className="mt-auto pt-4 font-mono text-4xl font-black leading-none text-white xl:text-5xl">{value}</div>
       <div className="mt-4 text-xs font-medium leading-5 text-[#7f939f]">{caption}</div>
@@ -174,9 +174,9 @@ function MetricTile({
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-white/6 px-3 py-3">
-      <div className="text-xs font-semibold text-[#81949e]">{label}</div>
-      <div className="mt-2 font-mono text-xl font-black text-white">{value}</div>
+    <div className="rounded-md border border-white/[0.06] bg-white/[0.055] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+      <div className="text-xs font-semibold text-[#7f949f]">{label}</div>
+      <div className="mt-1.5 font-mono text-lg font-black leading-none text-white">{value}</div>
     </div>
   );
 }
@@ -185,18 +185,20 @@ function Panel({
   children,
   title,
   action,
+  className = "",
 }: Readonly<{
   children: ReactNode;
   title: string;
   action?: ReactNode;
+  className?: string;
 }>) {
   return (
-    <section className="monitor-panel flex h-full min-h-0 flex-col rounded-lg border border-white/10 bg-[#0d171d]/88 p-4 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)]">
+    <section className={`monitor-panel flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-white/[0.08] bg-[#0b151b]/92 p-4 shadow-[0_26px_90px_-64px_rgba(0,0,0,0.95),inset_0_1px_0_rgba(255,255,255,0.035)] ${className}`}>
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-lg font-black text-white">{title}</h2>
         {action}
       </div>
-      <div className="mt-4 min-h-0 flex-1">{children}</div>
+      <div className="mt-3 min-h-0 flex-1 overflow-hidden">{children}</div>
     </section>
   );
 }
@@ -205,53 +207,15 @@ function Gauge({ value, label }: { value: number; label: string }) {
   return (
     <div className="grid place-items-center">
       <div
-        className="grid aspect-square w-full max-w-64 place-items-center rounded-full bg-[conic-gradient(#47d7c6_0deg,#47d7c6_calc(var(--score)*3.6deg),rgba(255,255,255,0.08)_0deg)] p-5"
+        className="grid aspect-square w-full max-w-56 place-items-center rounded-full bg-[conic-gradient(#47d7c6_0deg,#47d7c6_calc(var(--score)*3.6deg),rgba(255,255,255,0.08)_0deg)] p-4 shadow-[0_0_42px_rgba(71,215,198,0.12)]"
         style={{ "--score": value } as CSSProperties}
       >
-        <div className="grid h-full w-full place-items-center rounded-full bg-[#081018] text-center">
+        <div className="grid h-full w-full place-items-center rounded-full border border-white/[0.06] bg-[#071018] text-center">
           <div>
             <div className="text-sm font-bold text-[#7f939f]">{label}</div>
-            <div className="mt-2 font-mono text-5xl font-black text-[#47d7c6]">{formatPercent(value)}</div>
+            <div className="mt-2 font-mono text-4xl font-black text-[#47d7c6]">{formatPercent(value)}</div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function AttendanceSummaryBlock({
-  title,
-  rate,
-  total,
-  present,
-  late,
-  absent,
-  excused,
-}: {
-  title: string;
-  rate: number;
-  total: number;
-  present: number;
-  late: number;
-  absent: number;
-  excused: number;
-}) {
-  return (
-    <div className="rounded-md bg-white/6 p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-xs font-black text-[#81949e]">{title}</div>
-          <div className="mt-2 font-mono text-3xl font-black text-white">{formatPercent(rate)}</div>
-        </div>
-        <div className="shrink-0 text-right text-xs font-semibold leading-5 text-[#7f939f]">
-          {formatNumber(total)}건
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-4 gap-2">
-        <MiniStat label="출석" value={formatNumber(present)} />
-        <MiniStat label="지각" value={formatNumber(late)} />
-        <MiniStat label="결석" value={formatNumber(absent)} />
-        <MiniStat label="공결" value={formatNumber(excused)} />
       </div>
     </div>
   );
@@ -294,7 +258,7 @@ function CompactAttendanceLine({
       </div>
       <div className="mt-3 grid grid-cols-4 gap-2">
         {items.map(([label, value]) => (
-          <div key={label} className="min-w-0 rounded-md bg-black/14 px-2 py-2">
+          <div key={label} className="min-w-0 rounded-md bg-black/18 px-2 py-2">
             <div className="truncate text-[11px] font-semibold text-[#81949e]">{label}</div>
             <div className="mt-1 font-mono text-lg font-black leading-none text-white">{formatNumber(value)}</div>
           </div>
@@ -306,7 +270,7 @@ function CompactAttendanceLine({
 
 function AbsenceThresholdSummary({ summary }: { summary: DashboardSummary }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid h-full min-h-0 gap-3 sm:grid-cols-3">
       <MetricTile
         title="3과목 이상"
         value={formatNumber(summary.metrics.absenceOver3)}
@@ -376,18 +340,18 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
 
   if (targets.length === 0) {
     return (
-      <div className="rounded-md bg-white/6 p-4 text-sm font-semibold text-[#9eb0bb]">
+      <div className="rounded-md border border-white/[0.06] bg-white/[0.055] p-4 text-sm font-semibold text-[#9eb0bb]">
         최근 1주일 기준 출결 관찰 대상 없음
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="grid h-full min-h-0 gap-2">
       {targets.map((item) => (
         <div
           key={item.student.studentNo}
-          className="grid gap-3 rounded-md bg-white/6 px-3 py-3 sm:grid-cols-[1fr_auto]"
+          className="grid min-h-0 gap-3 rounded-md border border-white/[0.05] bg-white/[0.055] px-3 py-2.5 sm:grid-cols-[1fr_auto]"
         >
           <div className="min-w-0">
             <div className="truncate text-sm font-black text-white">
@@ -432,9 +396,12 @@ function BigBars({ items, limit = 10 }: { items: DistributionItem[]; limit?: num
 
 function RecentClasses({ summary, limit = 6 }: { summary: DashboardSummary; limit?: number }) {
   return (
-    <div className="space-y-2">
+    <div className="grid h-full min-h-0 content-between gap-2">
       {summary.recentClasses.slice(0, limit).map((session) => (
-        <div key={session.id} className="flex items-center justify-between gap-3 rounded-md bg-white/6 px-3 py-2">
+        <div
+          key={session.id}
+          className="flex min-h-0 items-center justify-between gap-3 rounded-md border border-white/[0.05] bg-white/[0.055] px-3 py-2"
+        >
           <div className="min-w-0">
             <div className="truncate text-sm font-bold text-white">{session.courseName}</div>
             <div className="mt-1 text-xs text-[#81949e]">
@@ -558,12 +525,12 @@ function Overview({ summary }: { summary: DashboardSummary }) {
 function AttendanceView({ summary }: { summary: DashboardSummary }) {
   return (
     <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[0.82fr_1.18fr]">
-      <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[1fr_auto]">
-        <Panel title="출결상황">
-          <div className="grid gap-4">
-            <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
-              <Gauge value={summary.metrics.attendanceRate} label="Today" />
-              <AttendanceSummaryBlock
+      <div className="attendance-left-column grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,0.7fr)_minmax(0,0.3fr)]">
+        <Panel title="출결상황" className="attendance-main-panel">
+          <div className="attendance-main-grid grid h-full min-h-0 items-center gap-3 lg:grid-cols-[0.58fr_1.42fr]">
+            <Gauge value={summary.metrics.attendanceRate} label="Today" />
+            <div className="grid min-h-0 content-center gap-3">
+              <CompactAttendanceLine
                 title="오늘 출결"
                 rate={summary.metrics.attendanceRate}
                 total={summary.metrics.attendanceEvents}
@@ -572,16 +539,16 @@ function AttendanceView({ summary }: { summary: DashboardSummary }) {
                 absent={summary.metrics.todayAbsent}
                 excused={summary.metrics.todayExcused}
               />
+              <CompactAttendanceLine
+                title="최근 1주일 출결"
+                rate={summary.metrics.weeklyAttendanceRate}
+                total={summary.metrics.weeklyAttendanceEvents}
+                present={summary.metrics.weeklyPresent}
+                late={summary.metrics.weeklyLate}
+                absent={summary.metrics.weeklyAbsent}
+                excused={summary.metrics.weeklyExcused}
+              />
             </div>
-            <AttendanceSummaryBlock
-              title="최근 1주일 출결"
-              rate={summary.metrics.weeklyAttendanceRate}
-              total={summary.metrics.weeklyAttendanceEvents}
-              present={summary.metrics.weeklyPresent}
-              late={summary.metrics.weeklyLate}
-              absent={summary.metrics.weeklyAbsent}
-              excused={summary.metrics.weeklyExcused}
-            />
           </div>
         </Panel>
 
@@ -590,9 +557,9 @@ function AttendanceView({ summary }: { summary: DashboardSummary }) {
         </Panel>
       </div>
 
-      <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[auto_1fr]">
+      <div className="attendance-right-column grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,0.36fr)_minmax(0,0.64fr)]">
         <Panel title="결석 누적 관찰">
-          <div className="grid gap-4">
+          <div className="grid h-full min-h-0 gap-3">
             <div className="text-sm font-semibold leading-6 text-[#9eb0bb]">
               최근 1주일 기준 결석 과목 수로 출결 관찰 대상을 분류합니다.
             </div>
@@ -601,7 +568,7 @@ function AttendanceView({ summary }: { summary: DashboardSummary }) {
         </Panel>
 
         <Panel title="관찰 대상 리스트">
-          <AbsenceObservationList summary={summary} limit={5} />
+          <AbsenceObservationList summary={summary} limit={4} />
         </Panel>
       </div>
     </div>
@@ -646,6 +613,7 @@ type CertificationIndicator = {
   mode: CertificationMode;
   title: string;
   value: string;
+  score: number;
   count: string;
   criterion: string;
   formula: string;
@@ -665,6 +633,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       mode: "dropout",
       title: "중도탈락율",
       value: formatPercent(summary.metrics.dropoutRate),
+      score: summary.metrics.dropoutRate,
       count: `${formatNumber(summary.metrics.dropoutStudents)} / ${formatNumber(totalStudents)}명`,
       criterion: `문서 기준: ${formatPercent(dropoutThreshold)} 미만`,
       formula: "(분자) 중도탈락 학생 수 / (분모) 외국인 재적학생 수",
@@ -678,6 +647,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       mode: "topik",
       title: "토픽취득율",
       value: formatPercent(summary.metrics.topikRate),
+      score: summary.metrics.topikRate,
       count: `${formatNumber(summary.metrics.topikStudents)} / ${formatNumber(totalStudents)}명`,
       criterion: "문서 기준: TOPIK 등 공인 언어능력 40% 이상",
       formula: "(분자) TOPIK 등 공인 언어능력 충족 학생 수 / (분모) 외국인 유학생 수",
@@ -691,6 +661,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       mode: "insurance",
       title: "보험가입율",
       value: formatPercent(summary.metrics.insuranceCoverageRate),
+      score: summary.metrics.insuranceCoverageRate,
       count: `${formatNumber(summary.metrics.activeInsurance)} / ${formatNumber(totalStudents)}명`,
       criterion: "문서 기준: 의료보험 가입률 95% 이상",
       formula: "(분자) 보험 가입·유효 학생 수 / (분모) 외국인 유학생 수",
@@ -704,6 +675,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       mode: "counseling",
       title: "상담비율",
       value: formatPercent(summary.metrics.counselingTargetRate),
+      score: summary.metrics.counselingTargetRate,
       count: `${formatNumber(summary.metrics.counselingTargets)} / ${formatNumber(totalStudents)}명`,
       criterion: "문서 기준: 상담(정신건강) 포함 관리 3점 이상",
       formula: "(분자) 상담 우선관리 학생 수 / (분모) 외국인 유학생 수",
@@ -724,11 +696,12 @@ function IndicatorCard({
   indicator: CertificationIndicator;
 }) {
   const activeTone = {
-    blue: "border-[#6aa8ff]/45 bg-[#0d1c2d]",
-    amber: "border-[#e8c46a]/45 bg-[#29220e]",
-    red: "border-[#f07188]/45 bg-[#2b1118]",
-    green: "border-[#80d88a]/45 bg-[#102517]",
+    blue: "border-[#6aa8ff]/42 bg-[#0c1a27]",
+    amber: "border-[#e8c46a]/42 bg-[#221c0d]",
+    red: "border-[#f07188]/42 bg-[#241017]",
+    green: "border-[#80d88a]/42 bg-[#0d2014]",
   };
+  const progress = Math.min(Math.max(indicator.score, 0), 100);
 
   return (
     <button
@@ -736,31 +709,37 @@ function IndicatorCard({
       name="mode"
       value={indicator.mode}
       aria-pressed={active}
-      className={`min-h-40 rounded-lg border p-4 text-left transition-smooth ${
+      className={`flex h-full min-h-0 flex-col rounded-lg border p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] transition-smooth ${
         active
           ? activeTone[indicator.tone]
-          : "border-white/10 bg-white/5 hover:border-[#47d7c6]/35 hover:bg-white/8"
+          : "border-white/[0.08] bg-white/[0.045] hover:border-[#47d7c6]/35 hover:bg-white/[0.07]"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="text-sm font-black text-white">{indicator.title}</div>
-        <span className="shrink-0 rounded-md bg-black/24 px-2 py-1 text-[11px] font-black text-[#dce8ed]">
+        <span className="shrink-0 rounded-md bg-black/28 px-2 py-1 text-[11px] font-black text-[#dce8ed]">
           {indicator.status}
         </span>
       </div>
-      <div className="mt-4 font-mono text-4xl font-black leading-none text-white xl:text-5xl">
-        {indicator.value}
+      <div className="mt-auto flex items-end justify-between gap-3 pt-3">
+        <div className="font-mono text-4xl font-black leading-none text-white">{indicator.value}</div>
+        <div className="font-mono text-sm font-black text-[#47d7c6]">{indicator.count}</div>
       </div>
-      <div className="mt-3 font-mono text-sm font-black text-[#47d7c6]">{indicator.count}</div>
       <div className="mt-3 text-xs font-semibold leading-5 text-[#9eb0bb]">{indicator.criterion}</div>
+      <div className="indicator-progress mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-[#47d7c6] via-[#6aa8ff] to-[#e8c46a]"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
     </button>
   );
 }
 
 function CertificationDetail({ indicator }: { indicator: CertificationIndicator }) {
   return (
-    <div className="grid gap-3">
-      <div className="rounded-md bg-white/6 p-3">
+    <div className="grid h-full min-h-0 gap-3">
+      <div className="rounded-md border border-white/[0.06] bg-white/[0.055] p-3">
         <div className="text-xs font-bold text-[#718691]">선택 지표</div>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
           <div className="text-2xl font-black text-white">{indicator.title}</div>
@@ -773,16 +752,16 @@ function CertificationDetail({ indicator }: { indicator: CertificationIndicator 
         <MiniStat label="상태" value={indicator.status} />
       </div>
 
-      <div className="space-y-2 text-sm leading-6 text-[#c8d5dc]">
-        <div>
+      <div className="grid min-h-0 gap-2 text-sm leading-6 text-[#c8d5dc]">
+        <div className="rounded-md border border-white/[0.05] bg-black/12 px-3 py-2">
           <span className="font-black text-white">산식</span>
           <span className="ml-2">{indicator.formula}</span>
         </div>
-        <div>
+        <div className="rounded-md border border-white/[0.05] bg-black/12 px-3 py-2">
           <span className="font-black text-white">증빙</span>
           <span className="ml-2">{indicator.evidence}</span>
         </div>
-        <div>
+        <div className="rounded-md border border-white/[0.05] bg-black/12 px-3 py-2">
           <span className="font-black text-white">참고</span>
           <span className="ml-2">{indicator.note}</span>
         </div>
@@ -796,8 +775,8 @@ function CertificationView({ summary, mode }: { summary: DashboardSummary; mode:
   const selected = indicators.find((indicator) => indicator.mode === mode) || indicators[0];
 
   return (
-    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[1.05fr_0.95fr]">
-      <div className="grid h-full min-h-0 auto-rows-fr gap-3 sm:grid-cols-2">
+    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[0.72fr_1.28fr]">
+      <div className="certification-index grid h-full min-h-0 gap-3 sm:grid-cols-2 xl:grid-cols-1 xl:grid-rows-[repeat(4,minmax(0,1fr))]">
         {indicators.map((indicator) => (
           <IndicatorCard
             key={indicator.mode}
@@ -807,7 +786,7 @@ function CertificationView({ summary, mode }: { summary: DashboardSummary; mode:
         ))}
       </div>
 
-      <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[1fr_1fr]">
+      <div className="certification-detail-grid grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,0.53fr)_minmax(0,0.47fr)]">
         <Panel title="교육국제화역량 인증제 추진계획">
           <CertificationDetail indicator={selected} />
         </Panel>
@@ -851,21 +830,21 @@ export function DashboardMonitor({ activeMode, summary }: { activeMode: Mode; su
   });
 
   return (
-    <main className="min-h-screen bg-[#081018] text-white lg:h-screen lg:overflow-hidden">
+    <main className="min-h-screen bg-[#070d12] text-white lg:h-screen lg:overflow-hidden">
       <script
         dangerouslySetInnerHTML={{
           __html: "window.setTimeout(function(){ window.location.reload(); }, 60000);",
         }}
       />
-      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#081018_0%,#0d1b22_48%,#10130f_100%)]" />
-      <div className="noise-layer opacity-[0.025]" />
+      <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#070d12_0%,#0b171d_50%,#0b0f12_100%)]" />
+      <div className="noise-layer opacity-[0.02]" />
 
       <div className="flex min-h-screen flex-col px-3 py-3 sm:px-4 lg:h-screen">
         <header className="shrink-0 border-b border-white/10 pb-2">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
+          <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <div className="text-xs font-black uppercase tracking-[0.2em] text-[#47d7c6]">KMUST Live Board</div>
-              <h1 className="mt-1 text-3xl font-black tracking-tight text-white xl:text-4xl 2xl:text-5xl">
+              <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white xl:text-4xl 2xl:text-[2.65rem]">
                 외국인학생 현황 대시보드
               </h1>
             </div>

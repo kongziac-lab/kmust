@@ -125,6 +125,38 @@ test("attendance mode renders absence threshold counts and student lists", async
   }
 });
 
+test("attendance and certification modes use bounded monitor layouts", async () => {
+  const attendanceResponse = await getHtml(`${baseUrl}/?mode=attendance`);
+  assert.equal(attendanceResponse.status, 200);
+
+  const attendanceHtml = attendanceResponse.body;
+  const expectedAttendanceClasses = [
+    "attendance-left-column",
+    "attendance-main-panel",
+    "attendance-main-grid",
+    "xl:grid-rows-[minmax(0,0.7fr)_minmax(0,0.3fr)]",
+  ];
+
+  for (const className of expectedAttendanceClasses) {
+    assert.match(attendanceHtml, new RegExp(escapeRegExp(className)), `${className} should be rendered`);
+  }
+
+  const certificationResponse = await getHtml(`${baseUrl}/?mode=certification`);
+  assert.equal(certificationResponse.status, 200);
+
+  const certificationHtml = certificationResponse.body;
+  const expectedCertificationClasses = [
+    "certification-index",
+    "certification-detail-grid",
+    "indicator-progress",
+    "xl:grid-rows-[repeat(4,minmax(0,1fr))]",
+  ];
+
+  for (const className of expectedCertificationClasses) {
+    assert.match(certificationHtml, new RegExp(escapeRegExp(className)), `${className} should be rendered`);
+  }
+});
+
 test("overview uses a full-height monitor grid", async () => {
   const response = await getHtml(baseUrl);
   assert.equal(response.status, 200);
