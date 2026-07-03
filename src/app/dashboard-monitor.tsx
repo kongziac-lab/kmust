@@ -1,24 +1,15 @@
-import type { CSSProperties, ReactNode } from "react";
-import type { DashboardSummary } from "@/lib/summary";
+"use client";
 
-export type Mode =
-  | "overview"
-  | "attendance"
-  | "status"
-  | "program"
-  | "nationality"
-  | "department"
-  | "grade"
-  | "certification"
-  | "insurance"
-  | "topik"
-  | "dropout"
-  | "counseling";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { dashboardModes, type Mode } from "@/lib/dashboard-modes";
+import type { DashboardSummary } from "@/lib/summary";
 
 type DistributionItem = {
   name: string;
   value: number;
 };
+
+type ModeChangeHandler = (mode: Mode) => void;
 
 const primaryModes: { label: string; mode: Mode }[] = [
   { label: "총괄보기", mode: "overview" },
@@ -44,27 +35,44 @@ const certificationModes: { label: string; mode: Mode }[] = [
 const statusModeSet = new Set<Mode>(["status", "program", "nationality", "department", "grade"]);
 const certificationModeSet = new Set<Mode>(["certification", "insurance", "topik", "dropout", "counseling"]);
 
-export const dashboardModes = new Set<Mode>([
-  "overview",
-  "attendance",
-  "status",
-  "program",
-  "nationality",
-  "department",
-  "grade",
-  "certification",
-  "insurance",
-  "topik",
-  "dropout",
-  "counseling",
-]);
-
 function formatNumber(value: number) {
   return value.toLocaleString("ko-KR");
 }
 
 function formatPercent(value: number) {
   return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
+}
+
+function getSeoulDateParts(value: string | Date) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Seoul",
+  }).formatToParts(date);
+
+  return Object.fromEntries(parts.map((part) => [part.type, part.value]));
+}
+
+function formatSeoulDateTime(value: string | Date) {
+  const parts = getSeoulDateParts(value);
+  const hour = Number(parts.hour) % 24;
+  const period = hour < 12 ? "AM" : "PM";
+  const displayHour = String(hour % 12 || 12).padStart(2, "0");
+
+  return `${parts.month}. ${parts.day}. ${period} ${displayHour}:${parts.minute}`;
+}
+
+function formatSeoulTime(value: string | Date) {
+  const parts = getSeoulDateParts(value);
+  const hour = Number(parts.hour) % 24;
+  const period = hour < 12 ? "AM" : "PM";
+  const displayHour = String(hour % 12 || 12).padStart(2, "0");
+
+  return `${period} ${displayHour}:${parts.minute}`;
 }
 
 function getDegreeDropoutThreshold(totalStudents: number) {
@@ -87,23 +95,43 @@ function modeIsActive(activeMode: Mode, mode: Mode) {
   return activeMode === mode;
 }
 
+function normalizeModeValue(value: string | null | undefined): Mode {
+  return dashboardModes.has(value as Mode) ? (value as Mode) : "overview";
+}
+
+function updateModeUrl(mode: Mode) {
+  const url = new URL(window.location.href);
+
+  if (mode === "overview") {
+    url.searchParams.delete("mode");
+  } else {
+    url.searchParams.set("mode", mode);
+  }
+
+  window.history.pushState({ mode }, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
 function ModeButton({
   activeMode,
   label,
   mode,
+  onModeChange,
 }: {
   activeMode: Mode;
   label: string;
   mode: Mode;
+  onModeChange: ModeChangeHandler;
 }) {
   const active = modeIsActive(activeMode, mode);
 
   return (
     <button
-      type="submit"
-      name="mode"
+      type="button"
       value={mode}
       aria-pressed={active}
+      data-mode-control="true"
+      data-mode={mode}
+      onClick={() => onModeChange(mode)}
       className={`h-9 shrink-0 rounded-md px-3.5 text-sm font-bold transition-smooth ${
         active
           ? "bg-[#47d7c6] text-[#061116] shadow-[0_0_32px_rgba(71,215,198,0.22)]"
@@ -119,10 +147,12 @@ function ModeGroup({
   activeMode,
   title,
   items,
+  onModeChange,
 }: {
   activeMode: Mode;
   title: string;
   items: { label: string; mode: Mode }[];
+  onModeChange: ModeChangeHandler;
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
@@ -134,6 +164,7 @@ function ModeGroup({
             activeMode={activeMode}
             label={item.label}
             mode={item.mode}
+            onModeChange={onModeChange}
           />
         ))}
       </div>
@@ -447,10 +478,7 @@ function RecentClasses({ summary, limit = 6 }: { summary: DashboardSummary; limi
             </div>
           </div>
           <div className="shrink-0 font-mono text-xs text-[#47d7c6]">
-            {new Date(session.scheduledAt).toLocaleTimeString("ko-KR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatSeoulTime(session.scheduledAt)}
           </div>
         </div>
       ))}
@@ -458,7 +486,7 @@ function RecentClasses({ summary, limit = 6 }: { summary: DashboardSummary; limi
   );
 }
 
-function Overview({ summary }: { summary: DashboardSummary }) {
+function Overview({ onModeChange, summary }: { onModeChange: ModeChangeHandler; summary: DashboardSummary }) {
   const attentionTotal = summary.metrics.highRisk + summary.metrics.mediumRisk;
 
   return (
@@ -517,9 +545,11 @@ function Overview({ summary }: { summary: DashboardSummary }) {
           className="overview-attendance-panel"
           action={
             <button
-              type="submit"
-              name="mode"
+              type="button"
               value="attendance"
+              data-mode-control="true"
+              data-mode="attendance"
+              onClick={() => onModeChange("attendance")}
               className="rounded-md bg-white/8 px-3 py-2 text-xs font-bold text-[#dce8ed] transition-smooth hover:bg-white/12"
             >
               출결상황
@@ -613,11 +643,13 @@ function StatusOverviewPanel({
   title,
   items,
   mode,
+  onModeChange,
   limit = 6,
 }: {
   title: string;
   items: DistributionItem[];
   mode: Mode;
+  onModeChange: ModeChangeHandler;
   limit?: number;
 }) {
   return (
@@ -626,9 +658,11 @@ function StatusOverviewPanel({
       className="status-overview-panel"
       action={
         <button
-          type="submit"
-          name="mode"
+          type="button"
           value={mode}
+          data-mode-control="true"
+          data-mode={mode}
+          onClick={() => onModeChange(mode)}
           className="rounded-md bg-white/8 px-3 py-2 text-xs font-bold text-[#dce8ed] transition-smooth hover:bg-white/12"
         >
           상세내역
@@ -687,7 +721,15 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
   );
 }
 
-function StatusView({ summary, mode }: { summary: DashboardSummary; mode: Mode }) {
+function StatusView({
+  summary,
+  mode,
+  onModeChange,
+}: {
+  summary: DashboardSummary;
+  mode: Mode;
+  onModeChange: ModeChangeHandler;
+}) {
   const detail = getStatusDetailConfig(summary, mode);
 
   if (detail) {
@@ -706,10 +748,34 @@ function StatusView({ summary, mode }: { summary: DashboardSummary; mode: Mode }
 
   return (
     <div className="monitor-grid status-overview-grid grid h-full min-h-0 gap-3 md:grid-cols-2 md:grid-rows-[repeat(2,minmax(0,1fr))]">
-      <StatusOverviewPanel title="과정별 현황" mode="program" items={summary.distributions.program} limit={5} />
-      <StatusOverviewPanel title="국가별 현황" mode="nationality" items={summary.distributions.nationality} limit={5} />
-      <StatusOverviewPanel title="학과별 현황" mode="department" items={summary.distributions.department} limit={6} />
-      <StatusOverviewPanel title="학년별 현황" mode="grade" items={summary.distributions.grade} limit={6} />
+      <StatusOverviewPanel
+        title="과정별 현황"
+        mode="program"
+        onModeChange={onModeChange}
+        items={summary.distributions.program}
+        limit={5}
+      />
+      <StatusOverviewPanel
+        title="국가별 현황"
+        mode="nationality"
+        onModeChange={onModeChange}
+        items={summary.distributions.nationality}
+        limit={5}
+      />
+      <StatusOverviewPanel
+        title="학과별 현황"
+        mode="department"
+        onModeChange={onModeChange}
+        items={summary.distributions.department}
+        limit={6}
+      />
+      <StatusOverviewPanel
+        title="학년별 현황"
+        mode="grade"
+        onModeChange={onModeChange}
+        items={summary.distributions.grade}
+        limit={6}
+      />
     </div>
   );
 }
@@ -848,9 +914,11 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
 function IndicatorCard({
   active,
   indicator,
+  onModeChange,
 }: {
   active: boolean;
   indicator: CertificationIndicator;
+  onModeChange: ModeChangeHandler;
 }) {
   const activeTone = {
     blue: "border-[#6aa8ff]/42 bg-[#0c1a27]",
@@ -862,10 +930,12 @@ function IndicatorCard({
 
   return (
     <button
-      type="submit"
-      name="mode"
+      type="button"
       value={indicator.mode}
       aria-pressed={active}
+      data-mode-control="true"
+      data-mode={indicator.mode}
+      onClick={() => onModeChange(indicator.mode)}
       className={`flex h-full min-h-0 flex-col rounded-lg border p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] transition-smooth ${
         active
           ? activeTone[indicator.tone]
@@ -927,7 +997,15 @@ function CertificationDetail({ indicator }: { indicator: CertificationIndicator 
   );
 }
 
-function CertificationView({ summary, mode }: { summary: DashboardSummary; mode: Mode }) {
+function CertificationView({
+  summary,
+  mode,
+  onModeChange,
+}: {
+  summary: DashboardSummary;
+  mode: Mode;
+  onModeChange: ModeChangeHandler;
+}) {
   const indicators = getCertificationIndicators(summary);
   const selected = indicators.find((indicator) => indicator.mode === mode) || indicators[0];
 
@@ -939,6 +1017,7 @@ function CertificationView({ summary, mode }: { summary: DashboardSummary; mode:
             key={indicator.mode}
             active={selected.mode === indicator.mode}
             indicator={indicator}
+            onModeChange={onModeChange}
           />
         ))}
       </div>
@@ -958,9 +1037,11 @@ function CertificationView({ summary, mode }: { summary: DashboardSummary; mode:
 
 function ActivePanel({
   activeMode,
+  onModeChange,
   summary,
 }: {
   activeMode: Mode;
+  onModeChange: ModeChangeHandler;
   summary: DashboardSummary;
 }) {
   if (activeMode === "attendance") {
@@ -968,23 +1049,34 @@ function ActivePanel({
   }
 
   if (statusModeSet.has(activeMode)) {
-    return <StatusView mode={activeMode} summary={summary} />;
+    return <StatusView mode={activeMode} onModeChange={onModeChange} summary={summary} />;
   }
 
   if (certificationModeSet.has(activeMode)) {
-    return <CertificationView mode={activeMode} summary={summary} />;
+    return <CertificationView mode={activeMode} onModeChange={onModeChange} summary={summary} />;
   }
 
-  return <Overview summary={summary} />;
+  return <Overview onModeChange={onModeChange} summary={summary} />;
 }
 
-export function DashboardMonitor({ activeMode, summary }: { activeMode: Mode; summary: DashboardSummary }) {
-  const generatedAt = new Date(summary.generatedAt).toLocaleString("ko-KR", {
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { activeMode: Mode; summary: DashboardSummary }) {
+  const [activeMode, setActiveMode] = useState(initialActiveMode);
+  const generatedAt = formatSeoulDateTime(summary.generatedAt);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setActiveMode(normalizeModeValue(params.get("mode")));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  function handleModeChange(mode: Mode) {
+    setActiveMode(mode);
+    updateModeUrl(mode);
+  }
 
   return (
     <main className="min-h-screen bg-[#070d12] text-white lg:h-screen lg:overflow-hidden">
@@ -1012,17 +1104,18 @@ export function DashboardMonitor({ activeMode, summary }: { activeMode: Mode; su
             </div>
           </div>
 
-          <form action="/" className="mt-3 grid gap-2 xl:grid-cols-[auto_1fr_1fr]" aria-label="대시보드 모드 선택">
-            <ModeGroup activeMode={activeMode} title="대시보드" items={primaryModes} />
-            <ModeGroup activeMode={activeMode} title="현황" items={statusModes} />
-            <ModeGroup activeMode={activeMode} title="인증" items={certificationModes} />
-          </form>
+          <nav
+            className="client-mode-switcher mt-3 grid gap-2 xl:grid-cols-[auto_1fr_1fr]"
+            aria-label="대시보드 모드 선택"
+          >
+            <ModeGroup activeMode={activeMode} title="대시보드" items={primaryModes} onModeChange={handleModeChange} />
+            <ModeGroup activeMode={activeMode} title="현황" items={statusModes} onModeChange={handleModeChange} />
+            <ModeGroup activeMode={activeMode} title="인증" items={certificationModes} onModeChange={handleModeChange} />
+          </nav>
         </header>
 
         <section className="dashboard-stage min-h-0 flex-1 py-3">
-          <form action="/" className="contents">
-            <ActivePanel activeMode={activeMode} summary={summary} />
-          </form>
+          <ActivePanel activeMode={activeMode} onModeChange={handleModeChange} summary={summary} />
         </section>
       </div>
     </main>

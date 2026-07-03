@@ -177,9 +177,9 @@ export function getClassSessions(): ClassSession[] {
   }));
 }
 
-export function getAttendanceEvents(): AttendanceEvent[] {
+export function getAttendanceEvents(students: Student[] = getStudents()): AttendanceEvent[] {
   const classes = getClassSessions();
-  const activeStudents = getStudents()
+  const activeStudents = students
     .filter((student) => student.academicStatus === "재학")
     .slice(0, 480);
   const days = Array.from({ length: 7 }, (_, index) => index);

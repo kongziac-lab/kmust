@@ -84,8 +84,24 @@ function summarizeAttendance(attendance: AttendanceEvent[]) {
   };
 }
 
-function attendanceFor(student: Student, attendance: AttendanceEvent[]) {
-  return attendance.filter((event) => event.studentNo === student.studentNo);
+function groupAttendanceByStudent(attendance: AttendanceEvent[]) {
+  const byStudent = new Map<string, AttendanceEvent[]>();
+
+  for (const event of attendance) {
+    const events = byStudent.get(event.studentNo);
+
+    if (events) {
+      events.push(event);
+    } else {
+      byStudent.set(event.studentNo, [event]);
+    }
+  }
+
+  return byStudent;
+}
+
+function attendanceForStudent(byStudent: Map<string, AttendanceEvent[]>, studentNo: string) {
+  return byStudent.get(studentNo) || [];
 }
 
 function buildAbsenceWatchStudents(
@@ -157,13 +173,14 @@ function buildAbsenceWatchStudents(
 export function buildDashboardSummary() {
   const students = getStudents();
   const classes = getClassSessions();
-  const attendance = getAttendanceEvents();
+  const attendance = getAttendanceEvents(students);
+  const attendanceByStudent = groupAttendanceByStudent(attendance);
   const now = new Date();
   const todayAttendance = attendance.filter((event) => isSameDay(event, now));
   const weeklyAttendance = attendance.filter((event) => isWithinCalendarDays(event, now, 7));
   const todaySummary = summarizeAttendance(todayAttendance);
   const weeklySummary = summarizeAttendance(weeklyAttendance);
-  const risks = students.map((student) => assessRisk(student, attendanceFor(student, attendance)));
+  const risks = students.map((student) => assessRisk(student, attendanceForStudent(attendanceByStudent, student.studentNo)));
   const activeStudents = students.filter((student) => student.academicStatus === "재학");
   const insuranceDue = students.filter((student) => isWithin(student.insuranceEndDate, 30)).length;
   const languageDue = students.filter((student) => isWithin(student.languageCertificateValidUntil, 60)).length;
@@ -255,7 +272,7 @@ export function buildDashboardSummary() {
       .map((student) => ({
         student,
         risk: risks.find((risk) => risk.studentNo === student.studentNo)!,
-        attendance: attendanceFor(student, attendance),
+        attendance: attendanceForStudent(attendanceByStudent, student.studentNo),
       }))
       .filter((item) => item.risk.overallGrade !== "low")
       .slice(0, 12),

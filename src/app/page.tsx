@@ -1,4 +1,5 @@
-import { DashboardMonitor, dashboardModes, type Mode } from "@/app/dashboard-monitor";
+import { DashboardMonitor } from "@/app/dashboard-monitor";
+import { dashboardModes, type Mode } from "@/lib/dashboard-modes";
 import { buildDashboardSummary } from "@/lib/summary";
 
 export const dynamic = "force-dynamic";

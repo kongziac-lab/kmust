@@ -61,6 +61,17 @@ test("monitor dashboard defaults to the overview mode", async () => {
   assert.match(html, /aria-pressed="true"[^>]*>총괄보기/);
 });
 
+test("monitor mode controls are client-side buttons", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  assert.match(html, /client-mode-switcher/, "mode switcher should render as a client control area");
+  assert.match(html, /type="button"[^>]*value="attendance"/, "attendance mode should use a client button");
+  assert.match(html, /type="button"[^>]*value="certification"/, "certification mode should use a client button");
+  assert.doesNotMatch(html, /type="submit"[^>]*name="mode"/, "mode buttons should not submit full page requests");
+});
+
 test("certification mode renders document-based indicator management", async () => {
   const response = await getHtml(`${baseUrl}/?mode=certification`);
   assert.equal(response.status, 200);
@@ -150,6 +161,20 @@ test("attendance mode renders absence threshold counts and student lists", async
   for (const text of expectedContent) {
     assert.match(html, new RegExp(text), `${text} should be rendered`);
   }
+});
+
+test("dashboard summary harness observer has no failed runs", async () => {
+  const response = await getHtml(`${baseUrl}/api/dashboard/summary`);
+  assert.equal(response.status, 200);
+
+  const summary = JSON.parse(response.body);
+  const runs = summary.harnessRuns;
+  assert.equal(Array.isArray(runs), true, "harnessRuns should be present");
+  assert.deepEqual(
+    runs.map((run) => run.target).sort(),
+    ["attendance", "classes", "students"],
+  );
+  assert.equal(runs.some((run) => run.status === "failed"), false, "harness observer should not report failures");
 });
 
 test("status mode renders one-page status overview without gender mode", async () => {
