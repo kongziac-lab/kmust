@@ -118,12 +118,147 @@ input {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+.mode-group-badge {
+  --badge-rgb: 33 183 255;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.1rem;
+  padding: 0.42rem 0.64rem;
+  color: #d9f5ff;
+  border: 1px solid rgb(var(--badge-rgb) / 0.36);
+  border-radius: 0.55rem;
+  background:
+    linear-gradient(180deg, rgb(var(--badge-rgb) / 0.16), rgb(3 14 26 / 0.72)),
+    radial-gradient(circle at 30% 0, rgb(var(--badge-rgb) / 0.25), transparent 72%);
+  box-shadow:
+    0 0 22px rgb(var(--badge-rgb) / 0.14),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+.mode-group-badge::before {
+  width: 0.36rem;
+  height: 0.36rem;
+  content: "";
+  border-radius: 999px;
+  background: rgb(var(--badge-rgb) / 1);
+  box-shadow: 0 0 14px rgb(var(--badge-rgb) / 0.72);
+}
+
+.mode-group-badge-dashboard {
+  --badge-rgb: 33 183 255;
+}
+
+.mode-group-badge-status {
+  --badge-rgb: 72 220 150;
+}
+
+.mode-group-badge-certification {
+  --badge-rgb: 255 91 131;
+}
+
+.mode-button {
+  --mode-rgb: 33 183 255;
+  --mode-accent: #21b7ff;
+  --mode-accent-2: #38e6ff;
+  color: #b6cad5;
+  border: 1px solid rgb(var(--mode-rgb) / 0.28);
+  background:
+    linear-gradient(180deg, rgb(var(--mode-rgb) / 0.1), rgb(3 14 26 / 0.82)),
+    radial-gradient(circle at 50% 0, rgb(var(--mode-rgb) / 0.18), transparent 76%);
+}
+
+.mode-button:hover {
+  color: #f6fbff;
+  border-color: rgb(var(--mode-rgb) / 0.58);
+  background:
+    linear-gradient(180deg, rgb(var(--mode-rgb) / 0.2), rgb(5 20 34 / 0.9)),
+    radial-gradient(circle at 50% 0, rgb(var(--mode-rgb) / 0.28), transparent 76%);
+  box-shadow: 0 0 26px rgb(var(--mode-rgb) / 0.18), inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.mode-button[aria-pressed="true"] {
+  color: #02111d;
+  border-color: rgb(var(--mode-rgb) / 0.68);
+  background:
+    linear-gradient(135deg, var(--mode-accent), var(--mode-accent-2)),
+    radial-gradient(circle at 50% 0, rgb(255 255 255 / 0.42), transparent 64%);
+  box-shadow:
+    0 0 32px rgb(var(--mode-rgb) / 0.32),
+    inset 0 1px 0 rgb(255 255 255 / 0.28);
+}
+
+.mode-button-cyan {
+  --mode-rgb: 33 183 255;
+  --mode-accent: #21b7ff;
+  --mode-accent-2: #3eeaff;
+}
+
+.mode-button-blue {
+  --mode-rgb: 78 142 255;
+  --mode-accent: #4e8eff;
+  --mode-accent-2: #36c8ff;
+}
+
+.mode-button-violet {
+  --mode-rgb: 150 124 255;
+  --mode-accent: #967cff;
+  --mode-accent-2: #58c8ff;
+}
+
+.mode-button-rose {
+  --mode-rgb: 255 91 131;
+  --mode-accent: #ff5b83;
+  --mode-accent-2: #ff9db7;
+}
+
+.mode-button-emerald {
+  --mode-rgb: 72 220 150;
+  --mode-accent: #48dc96;
+  --mode-accent-2: #94f6c6;
+}
+
+.mode-button-sky {
+  --mode-rgb: 80 190 255;
+  --mode-accent: #50beff;
+  --mode-accent-2: #8de3ff;
+}
+
+.mode-button-amber {
+  --mode-rgb: 240 184 78;
+  --mode-accent: #f0b84e;
+  --mode-accent-2: #ffe08c;
+}
+
+.mode-button-indigo {
+  --mode-rgb: 106 132 255;
+  --mode-accent: #6a84ff;
+  --mode-accent-2: #9faeff;
+}
+
+.mode-button-gold {
+  --mode-rgb: 232 196 106;
+  --mode-accent: #e8c46a;
+  --mode-accent-2: #ffe59b;
+}
+
+.mode-button-lime {
+  --mode-rgb: 162 222 90;
+  --mode-accent: #a2de5a;
+  --mode-accent-2: #d6f37e;
+}
+
 .metric-tile,
 .tech-stat,
 .monitor-panel,
 .summary-certification-card,
 .status-filter-bar,
-.combination-controls {
+.combination-controls,
+.mode-group-badge,
+.mode-button,
+.overview-attendance-line,
+.attendance-metric-pill,
+.attendance-deep-link {
   backdrop-filter: blur(14px);
 }
 
@@ -167,6 +302,116 @@ input {
     0 24px 90px -58px rgba(0, 0, 0, 0.98),
     inset 0 1px 0 rgba(255, 255, 255, 0.045),
     inset 0 0 0 1px rgba(15, 130, 220, 0.12);
+}
+
+.overview-attendance-card {
+  border-color: rgba(36, 184, 255, 0.45);
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(36, 184, 255, 0.2), transparent 20rem),
+    radial-gradient(circle at 100% 4%, rgba(78, 142, 255, 0.16), transparent 18rem),
+    linear-gradient(180deg, rgba(6, 26, 43, 0.96), rgba(3, 12, 22, 0.9));
+  box-shadow:
+    0 28px 100px -58px rgba(0, 0, 0, 1),
+    0 0 46px rgba(33, 183, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 0 1px rgba(36, 184, 255, 0.16);
+}
+
+.overview-attendance-card::after {
+  position: absolute;
+  right: 1rem;
+  bottom: -3.6rem;
+  width: 18rem;
+  height: 8rem;
+  content: "";
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(36, 184, 255, 0.18), transparent 67%);
+  filter: blur(12px);
+}
+
+.overview-attendance-card .electric-panel-title {
+  color: #75d8ff;
+}
+
+.attendance-deep-link {
+  color: #e6f8ff;
+  border: 1px solid rgba(36, 184, 255, 0.32);
+  background:
+    linear-gradient(135deg, rgba(36, 184, 255, 0.18), rgba(78, 142, 255, 0.12)),
+    rgba(2, 13, 24, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.attendance-deep-link:hover {
+  color: #02111d;
+  border-color: rgba(117, 216, 255, 0.75);
+  background: linear-gradient(135deg, #21b7ff, #75e5ff);
+  box-shadow: 0 0 24px rgba(33, 183, 255, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.overview-attendance-line {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(36, 184, 255, 0.18);
+  background:
+    linear-gradient(135deg, rgba(36, 184, 255, 0.1), rgba(6, 20, 34, 0.78)),
+    radial-gradient(circle at 0 0, rgba(36, 184, 255, 0.16), transparent 15rem);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    inset 0 0 0 1px rgba(36, 184, 255, 0.06);
+}
+
+.overview-attendance-line[data-attendance-variant="today"] {
+  border-color: rgba(36, 184, 255, 0.36);
+  background:
+    linear-gradient(135deg, rgba(36, 184, 255, 0.18), rgba(5, 20, 34, 0.82)),
+    radial-gradient(circle at 0 0, rgba(33, 183, 255, 0.28), transparent 16rem);
+}
+
+.overview-attendance-line[data-attendance-variant="weekly"] {
+  border-color: rgba(150, 124, 255, 0.28);
+  background:
+    linear-gradient(135deg, rgba(150, 124, 255, 0.12), rgba(5, 18, 33, 0.8)),
+    radial-gradient(circle at 0 0, rgba(78, 142, 255, 0.18), transparent 16rem);
+}
+
+.overview-attendance-rate {
+  text-shadow: 0 0 24px rgba(36, 184, 255, 0.22);
+}
+
+.attendance-rate-chip {
+  color: #07111a;
+  background: linear-gradient(135deg, #21b7ff, #75e5ff);
+  box-shadow: 0 0 18px rgba(33, 183, 255, 0.25);
+}
+
+.overview-attendance-line[data-attendance-variant="weekly"] .attendance-rate-chip {
+  color: #f2edff;
+  background: linear-gradient(135deg, rgba(150, 124, 255, 0.8), rgba(78, 142, 255, 0.72));
+}
+
+.attendance-metric-pill {
+  border: 1px solid rgb(var(--attendance-rgb, 36 184 255) / 0.16);
+  background:
+    linear-gradient(180deg, rgb(var(--attendance-rgb, 36 184 255) / 0.12), rgb(1 10 18 / 0.46)),
+    rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.attendance-metric-present {
+  --attendance-rgb: 72 220 150;
+}
+
+.attendance-metric-late {
+  --attendance-rgb: 232 196 106;
+}
+
+.attendance-metric-absent {
+  --attendance-rgb: 255 91 131;
+}
+
+.attendance-metric-excused {
+  --attendance-rgb: 80 190 255;
 }
 
 .summary-certification-card {

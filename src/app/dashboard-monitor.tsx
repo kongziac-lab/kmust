@@ -13,6 +13,8 @@ type ModeChangeHandler = (mode: Mode) => void;
 type EnrollmentFilter = "enrolled" | "active" | "leave";
 type StatusDimension = "program" | "nationality" | "department" | "grade";
 type StatusFilterDimension = "all" | StatusDimension;
+type ModeGroupTone = "dashboard" | "status" | "certification";
+type ModeButtonTone = "cyan" | "blue" | "violet" | "rose" | "emerald" | "sky" | "amber" | "indigo" | "gold" | "lime";
 type StatusRecord = DashboardSummary["statusGroups"]["enrolled"]["records"][number];
 type CombinationRow = {
   name: string;
@@ -52,6 +54,21 @@ const statusModeSet = new Set<Mode>(["status", "program", "nationality", "depart
 const certificationModeSet = new Set<Mode>(["certification", "insurance", "topik", "dropout", "counseling"]);
 const dashboardSummaryEndpoint = "/api/dashboard/summary";
 const dashboardSummaryPollingMs = 10_000;
+const modeButtonTones: Record<Mode, ModeButtonTone> = {
+  overview: "cyan",
+  attendance: "blue",
+  status: "violet",
+  certification: "rose",
+  program: "emerald",
+  nationality: "sky",
+  department: "amber",
+  grade: "indigo",
+  programNationality: "gold",
+  dropout: "lime",
+  topik: "blue",
+  insurance: "rose",
+  counseling: "gold",
+};
 const statusDimensionOptions: { label: string; value: StatusDimension }[] = [
   { label: "과정", value: "program" },
   { label: "국가", value: "nationality" },
@@ -242,6 +259,7 @@ function ModeButton({
   onModeChange: ModeChangeHandler;
 }) {
   const active = modeIsActive(activeMode, mode);
+  const tone = modeButtonTones[mode];
 
   return (
     <button
@@ -250,12 +268,9 @@ function ModeButton({
       aria-pressed={active}
       data-mode-control="true"
       data-mode={mode}
+      data-mode-tone={tone}
       onClick={() => onModeChange(mode)}
-      className={`electric-mode-button h-9 shrink-0 rounded-md px-3.5 text-sm font-bold transition-smooth ${
-        active
-          ? "bg-[#21b7ff] text-[#02111d] ring-1 ring-[#7bdcff]/55 shadow-[0_0_30px_rgba(33,183,255,0.28)]"
-          : "bg-[#071626]/80 text-[#9ab0bf] ring-1 ring-[#126cae]/32 hover:bg-[#0c2236] hover:text-[#f4fbff] hover:ring-[#24b8ff]/55"
-      }`}
+      className={`mode-button mode-button-${tone} electric-mode-button h-9 shrink-0 rounded-md px-3.5 text-sm font-bold transition-smooth`}
     >
       {label}
     </button>
@@ -265,17 +280,21 @@ function ModeButton({
 function ModeGroup({
   activeMode,
   title,
+  tone,
   items,
   onModeChange,
 }: {
   activeMode: Mode;
   title: string;
+  tone: ModeGroupTone;
   items: { label: string; mode: Mode }[];
   onModeChange: ModeChangeHandler;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <div className="shrink-0 text-xs font-bold text-[#718691]">{title}</div>
+    <div className="mode-group flex min-w-0 items-center gap-2" data-mode-group={tone}>
+      <div className={`mode-group-badge mode-group-badge-${tone} shrink-0 text-xs font-black`}>
+        {title}
+      </div>
       <div className="flex min-w-0 gap-2 overflow-x-auto pb-1">
         {items.map((item) => (
           <ModeButton
@@ -432,26 +451,40 @@ function OverviewAttendanceLine({
   absent: number;
   excused: number;
 }) {
+  const variant = title.includes("오늘") ? "today" : "weekly";
+  const chipLabel = variant === "today" ? "실시간" : "7일 누적";
   const items = [
-    ["출석", present],
-    ["지각", late],
-    ["결석", absent],
-    ["공결", excused],
+    ["출석", present, "present"],
+    ["지각", late, "late"],
+    ["결석", absent, "absent"],
+    ["공결", excused, "excused"],
   ] as const;
 
   return (
-    <div className="overview-attendance-line grid min-h-0 gap-3 rounded-md border border-white/[0.06] bg-white/[0.055] px-3 py-2.5 xl:grid-cols-[minmax(9rem,0.72fr)_minmax(0,1.28fr)]">
-      <div className="min-w-0">
+    <div
+      className="overview-attendance-line grid min-h-0 gap-3 rounded-md border px-3 py-2.5 xl:grid-cols-[minmax(9.8rem,0.74fr)_minmax(0,1.26fr)]"
+      data-attendance-variant={variant}
+    >
+      <div className="overview-attendance-main min-w-0">
         <div className="flex items-center justify-between gap-3">
-          <div className="truncate text-xs font-black text-[#9eb0bb]">{title}</div>
-          <div className="shrink-0 font-mono text-xs font-bold text-[#81949e]">{formatNumber(total)}건</div>
+          <div className="min-w-0">
+            <div className="truncate text-xs font-black text-[#bfd4df]">{title}</div>
+            <div className="mt-1 flex min-w-0 items-center gap-2">
+              <span className="attendance-rate-chip shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black">
+                {chipLabel}
+              </span>
+              <span className="truncate font-mono text-xs font-bold text-[#8aa8bb]">{formatNumber(total)}건</span>
+            </div>
+          </div>
         </div>
-        <div className="mt-1.5 font-mono text-3xl font-black leading-none text-white">{formatPercent(rate)}</div>
+        <div className="overview-attendance-rate mt-2 font-mono text-3xl font-black leading-none text-white">
+          {formatPercent(rate)}
+        </div>
       </div>
       <div className="overview-attendance-breakdown grid min-w-0 grid-cols-4 gap-2">
-        {items.map(([label, value]) => (
-          <div key={label} className="min-w-0 rounded-md bg-black/18 px-2.5 py-2">
-            <div className="truncate text-[11px] font-semibold text-[#8ca1ac]">{label}</div>
+        {items.map(([label, value, tone]) => (
+          <div key={label} className={`attendance-metric-pill attendance-metric-${tone} min-w-0 rounded-md px-2.5 py-2`}>
+            <div className="truncate text-[11px] font-bold text-[#9fb5c0]">{label}</div>
             <div className="mt-1 font-mono text-base font-black leading-none text-white">{formatNumber(value)}</div>
           </div>
         ))}
@@ -661,7 +694,7 @@ function Overview({ onModeChange, summary }: { onModeChange: ModeChangeHandler; 
       <div className="overview-right-column grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
         <Panel
           title="오늘 출결"
-          className="overview-attendance-panel"
+          className="overview-attendance-panel overview-attendance-card"
           action={
             <button
               type="button"
@@ -669,7 +702,7 @@ function Overview({ onModeChange, summary }: { onModeChange: ModeChangeHandler; 
               data-mode-control="true"
               data-mode="attendance"
               onClick={() => onModeChange("attendance")}
-              className="rounded-md bg-white/8 px-3 py-2 text-xs font-bold text-[#dce8ed] transition-smooth hover:bg-white/12"
+              className="attendance-deep-link rounded-md px-3 py-2 text-xs font-black transition-smooth"
             >
               출결상황
             </button>
@@ -1771,9 +1804,27 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
             className="client-mode-switcher mt-3 grid gap-2 xl:grid-cols-[auto_1fr_1fr]"
             aria-label="대시보드 모드 선택"
           >
-            <ModeGroup activeMode={activeMode} title="대시보드" items={primaryModes} onModeChange={handleModeChange} />
-            <ModeGroup activeMode={activeMode} title="현황" items={statusModes} onModeChange={handleModeChange} />
-            <ModeGroup activeMode={activeMode} title="인증" items={certificationModes} onModeChange={handleModeChange} />
+            <ModeGroup
+              activeMode={activeMode}
+              title="대시보드"
+              tone="dashboard"
+              items={primaryModes}
+              onModeChange={handleModeChange}
+            />
+            <ModeGroup
+              activeMode={activeMode}
+              title="현황"
+              tone="status"
+              items={statusModes}
+              onModeChange={handleModeChange}
+            />
+            <ModeGroup
+              activeMode={activeMode}
+              title="인증"
+              tone="certification"
+              items={certificationModes}
+              onModeChange={handleModeChange}
+            />
           </nav>
         </header>
 

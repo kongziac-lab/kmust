@@ -107,6 +107,33 @@ test("monitor dashboard applies the reference-inspired visual system", async () 
   }
 });
 
+test("monitor mode groups use badges and differentiated button palettes", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "mode-group-badge",
+    "data-mode-group=\"dashboard\"",
+    "data-mode-group=\"status\"",
+    "data-mode-group=\"certification\"",
+    "mode-button-cyan",
+    "mode-button-blue",
+    "mode-button-violet",
+    "mode-button-rose",
+    "mode-button-emerald",
+    "mode-button-amber",
+    "mode-button-gold",
+    "data-mode-tone=\"cyan\"",
+    "data-mode-tone=\"amber\"",
+    "data-mode-tone=\"gold\"",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered`);
+  }
+});
+
 test("certification mode renders document-based indicator management", async () => {
   const response = await getHtml(`${baseUrl}/?mode=certification`);
   assert.equal(response.status, 200);
@@ -152,6 +179,30 @@ test("overview renders today and weekly attendance observation summaries", async
 
   for (const text of expectedContent) {
     assert.match(html, new RegExp(text), `${text} should be rendered`);
+  }
+});
+
+test("overview attendance card renders enhanced live styling", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "overview-attendance-card",
+    "attendance-rate-chip",
+    "attendance-metric-pill",
+    "attendance-metric-present",
+    "attendance-metric-late",
+    "attendance-metric-absent",
+    "attendance-metric-excused",
+    "data-attendance-variant=\"today\"",
+    "data-attendance-variant=\"weekly\"",
+    "실시간",
+    "7일 누적",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered`);
   }
 });
 
