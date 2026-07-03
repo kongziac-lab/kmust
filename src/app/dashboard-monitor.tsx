@@ -265,6 +265,51 @@ function CompactAttendanceLine({
   );
 }
 
+function OverviewAttendanceLine({
+  title,
+  rate,
+  total,
+  present,
+  late,
+  absent,
+  excused,
+}: {
+  title: string;
+  rate: number;
+  total: number;
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+}) {
+  const items = [
+    ["출석", present],
+    ["지각", late],
+    ["결석", absent],
+    ["공결", excused],
+  ] as const;
+
+  return (
+    <div className="overview-attendance-line grid min-h-0 gap-3 rounded-md border border-white/[0.06] bg-white/[0.055] px-3 py-2.5 xl:grid-cols-[minmax(9rem,0.72fr)_minmax(0,1.28fr)]">
+      <div className="min-w-0">
+        <div className="flex items-center justify-between gap-3">
+          <div className="truncate text-xs font-black text-[#9eb0bb]">{title}</div>
+          <div className="shrink-0 font-mono text-xs font-bold text-[#81949e]">{formatNumber(total)}건</div>
+        </div>
+        <div className="mt-1.5 font-mono text-3xl font-black leading-none text-white">{formatPercent(rate)}</div>
+      </div>
+      <div className="overview-attendance-breakdown grid min-w-0 grid-cols-4 gap-2">
+        {items.map(([label, value]) => (
+          <div key={label} className="min-w-0 rounded-md bg-black/18 px-2.5 py-2">
+            <div className="truncate text-[11px] font-semibold text-[#8ca1ac]">{label}</div>
+            <div className="mt-1 font-mono text-base font-black leading-none text-white">{formatNumber(value)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AbsenceThresholdSummary({ summary }: { summary: DashboardSummary }) {
   return (
     <div className="grid h-full min-h-0 gap-3 sm:grid-cols-3">
@@ -332,8 +377,32 @@ function ProgressRows({
 
 function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSummary; limit?: number }) {
   const targets = summary.absenceWatchStudents
-    .filter((item) => item.absentCount >= 3)
-    .slice(0, limit);
+    .filter((item) => item.absentCount >= 3);
+  const rolling = targets.length > limit;
+  const rollDuration = `${Math.max(targets.length * 3.5, 26)}s`;
+
+  function renderTarget(item: (typeof targets)[number], key: string) {
+    return (
+      <div
+        key={key}
+        className="absence-roll-row grid min-h-0 gap-3 rounded-md border border-white/[0.05] bg-white/[0.055] px-3 py-2.5 sm:grid-cols-[1fr_auto]"
+      >
+        <div className="min-w-0">
+          <div className="truncate text-sm font-black text-white">
+            {item.student.studentNo} · {item.student.department || item.student.program}
+          </div>
+          <div className="mt-1 truncate text-xs font-semibold text-[#81949e]">
+            결석 과목 {item.courseNames.join(", ") || "미확인"}
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-right">
+          <MiniStat label="결석" value={formatNumber(item.absentCount)} />
+          <MiniStat label="지각" value={formatNumber(item.lateCount)} />
+          <MiniStat label="공결" value={formatNumber(item.excusedCount)} />
+        </div>
+      </div>
+    );
+  }
 
   if (targets.length === 0) {
     return (
@@ -344,27 +413,21 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-2">
-      {targets.map((item) => (
-        <div
-          key={item.student.studentNo}
-          className="grid min-h-0 gap-3 rounded-md border border-white/[0.05] bg-white/[0.055] px-3 py-2.5 sm:grid-cols-[1fr_auto]"
-        >
-          <div className="min-w-0">
-            <div className="truncate text-sm font-black text-white">
-              {item.student.studentNo} · {item.student.department || item.student.program}
-            </div>
-            <div className="mt-1 truncate text-xs font-semibold text-[#81949e]">
-              결석 과목 {item.courseNames.join(", ") || "미확인"}
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-right">
-            <MiniStat label="결석" value={formatNumber(item.absentCount)} />
-            <MiniStat label="지각" value={formatNumber(item.lateCount)} />
-            <MiniStat label="공결" value={formatNumber(item.excusedCount)} />
-          </div>
+    <div
+      className="absence-roll h-full min-h-0 overflow-hidden pr-1"
+      aria-label="최근 1주일 출결 관찰 대상 롤링 리스트"
+      style={{ "--roll-duration": rollDuration } as CSSProperties}
+    >
+      <div className="absence-roll-track flex flex-col" data-rolling={rolling ? "true" : "false"}>
+        <div className="grid gap-2">
+          {targets.map((item) => renderTarget(item, item.student.studentNo))}
         </div>
-      ))}
+        {rolling ? (
+          <div className="grid gap-2" aria-hidden="true">
+            {targets.map((item) => renderTarget(item, `repeat-${item.student.studentNo}`))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -451,6 +514,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
       <div className="overview-right-column grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
         <Panel
           title="오늘 출결"
+          className="overview-attendance-panel"
           action={
             <button
               type="submit"
@@ -462,8 +526,8 @@ function Overview({ summary }: { summary: DashboardSummary }) {
             </button>
           }
         >
-          <div className="grid h-full min-h-0 content-between gap-2">
-            <CompactAttendanceLine
+          <div className="grid h-full min-h-0 grid-rows-2 gap-3">
+            <OverviewAttendanceLine
               title="오늘 출결"
               rate={summary.metrics.attendanceRate}
               total={summary.metrics.attendanceEvents}
@@ -472,7 +536,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
               absent={summary.metrics.todayAbsent}
               excused={summary.metrics.todayExcused}
             />
-            <CompactAttendanceLine
+            <OverviewAttendanceLine
               title="최근 1주일 출결"
               rate={summary.metrics.weeklyAttendanceRate}
               total={summary.metrics.weeklyAttendanceEvents}

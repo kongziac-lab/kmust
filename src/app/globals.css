@@ -72,6 +72,27 @@ input {
   }
 }
 
+.absence-roll {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%);
+}
+
+.absence-roll-track[data-rolling="true"] {
+  animation: absenceRoll var(--roll-duration, 36s) linear infinite;
+}
+
+.absence-roll:hover .absence-roll-track {
+  animation-play-state: paused;
+}
+
+@keyframes absenceRoll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reveal {
     animation: none;
@@ -79,5 +100,10 @@ input {
 
   .transition-smooth {
     transition: none;
+  }
+
+  .absence-roll-track {
+    animation: none !important;
+    transform: none !important;
   }
 }

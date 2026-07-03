@@ -95,6 +95,9 @@ test("overview renders today and weekly attendance observation summaries", async
   const expectedContent = [
     "오늘 출결",
     "최근 1주일 출결",
+    "overview-attendance-panel",
+    "overview-attendance-line",
+    "overview-attendance-breakdown",
     "출결 관찰 대상",
     "3과목 이상",
     "5과목 이상",
@@ -137,6 +140,9 @@ test("attendance mode renders absence threshold counts and student lists", async
     "5과목 이상",
     "7과목 이상",
     "관찰 대상 리스트",
+    "absence-roll",
+    "absence-roll-track",
+    "absence-roll-row",
     "결석 과목",
     "최근 1주일",
   ];
