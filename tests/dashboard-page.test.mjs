@@ -72,6 +72,16 @@ test("monitor mode controls are client-side buttons", async () => {
   assert.doesNotMatch(html, /type="submit"[^>]*name="mode"/, "mode buttons should not submit full page requests");
 });
 
+test("monitor dashboard polls the summary API without reloading the page", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  assert.match(html, /data-live-summary-polling="10000"/, "summary polling interval should be 10 seconds");
+  assert.match(html, /data-live-summary-endpoint="\/api\/dashboard\/summary"/, "summary API endpoint should be configured");
+  assert.doesNotMatch(html, /location\.reload/, "dashboard should not use a full page reload for live updates");
+});
+
 test("certification mode renders document-based indicator management", async () => {
   const response = await getHtml(`${baseUrl}/?mode=certification`);
   assert.equal(response.status, 200);

@@ -34,6 +34,8 @@ const certificationModes: { label: string; mode: Mode }[] = [
 
 const statusModeSet = new Set<Mode>(["status", "program", "nationality", "department", "grade"]);
 const certificationModeSet = new Set<Mode>(["certification", "insurance", "topik", "dropout", "counseling"]);
+const dashboardSummaryEndpoint = "/api/dashboard/summary";
+const dashboardSummaryPollingMs = 10_000;
 
 function formatNumber(value: number) {
   return value.toLocaleString("ko-KR");
@@ -1071,7 +1073,8 @@ function ActivePanel({
 
 export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { activeMode: Mode; summary: DashboardSummary }) {
   const [activeMode, setActiveMode] = useState(initialActiveMode);
-  const generatedAt = formatSeoulDateTime(summary.generatedAt);
+  const [liveSummary, setLiveSummary] = useState(summary);
+  const generatedAt = formatSeoulDateTime(liveSummary.generatedAt);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -1083,18 +1086,64 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  useEffect(() => {
+    let stopped = false;
+    let activeController: AbortController | null = null;
+
+    async function refreshSummary() {
+      if (activeController) {
+        return;
+      }
+
+      const controller = new AbortController();
+      activeController = controller;
+
+      try {
+        const response = await fetch(dashboardSummaryEndpoint, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to refresh dashboard summary: ${response.status}`);
+        }
+
+        const nextSummary = (await response.json()) as DashboardSummary;
+
+        if (!stopped) {
+          setLiveSummary(nextSummary);
+        }
+      } catch (error) {
+        if (!stopped && !(error instanceof DOMException && error.name === "AbortError")) {
+          console.error(error);
+        }
+      } finally {
+        if (activeController === controller) {
+          activeController = null;
+        }
+      }
+    }
+
+    const intervalId = window.setInterval(refreshSummary, dashboardSummaryPollingMs);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(intervalId);
+      activeController?.abort();
+    };
+  }, []);
+
   function handleModeChange(mode: Mode) {
     setActiveMode(mode);
     updateModeUrl(mode);
   }
 
   return (
-    <main className="min-h-screen bg-[#070d12] text-white lg:h-screen lg:overflow-hidden">
-      <script
-        dangerouslySetInnerHTML={{
-          __html: "window.setTimeout(function(){ window.location.reload(); }, 60000);",
-        }}
-      />
+    <main
+      className="min-h-screen bg-[#070d12] text-white lg:h-screen lg:overflow-hidden"
+      data-live-summary-endpoint={dashboardSummaryEndpoint}
+      data-live-summary-polling={dashboardSummaryPollingMs}
+    >
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#070d12_0%,#0b171d_50%,#0b0f12_100%)]" />
       <div className="noise-layer opacity-[0.02]" />
 
@@ -1109,7 +1158,7 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
             </div>
             <div className="grid grid-cols-3 gap-2 text-right sm:flex sm:items-end sm:justify-end">
               <MiniStat label="모드" value={getModeTitle(activeMode)} />
-              <MiniStat label="자료" value={summary.dataSource.type === "sqlite" ? "DB" : "SEED"} />
+              <MiniStat label="자료" value={liveSummary.dataSource.type === "sqlite" ? "DB" : "SEED"} />
               <MiniStat label="갱신" value={generatedAt} />
             </div>
           </div>
@@ -1125,7 +1174,7 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
         </header>
 
         <section className="dashboard-stage min-h-0 flex-1 py-3">
-          <ActivePanel activeMode={activeMode} onModeChange={handleModeChange} summary={summary} />
+          <ActivePanel activeMode={activeMode} onModeChange={handleModeChange} summary={liveSummary} />
         </section>
       </div>
     </main>
