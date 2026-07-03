@@ -164,9 +164,9 @@ function MetricTile({
   };
 
   return (
-    <section className={`min-h-32 rounded-lg border p-4 ${tones[tone]}`}>
+    <section className={`flex h-full min-h-0 flex-col rounded-lg border p-4 ${tones[tone]}`}>
       <div className="text-sm font-semibold text-[#a9bac4]">{title}</div>
-      <div className="mt-4 font-mono text-4xl font-black leading-none text-white xl:text-5xl">{value}</div>
+      <div className="mt-auto pt-4 font-mono text-4xl font-black leading-none text-white xl:text-5xl">{value}</div>
       <div className="mt-4 text-xs font-medium leading-5 text-[#7f939f]">{caption}</div>
     </section>
   );
@@ -191,12 +191,12 @@ function Panel({
   action?: ReactNode;
 }>) {
   return (
-    <section className="min-h-0 rounded-lg border border-white/10 bg-[#0d171d]/88 p-4 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)]">
+    <section className="monitor-panel flex h-full min-h-0 flex-col rounded-lg border border-white/10 bg-[#0d171d]/88 p-4 shadow-[0_24px_80px_-52px_rgba(0,0,0,0.9)]">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-lg font-black text-white">{title}</h2>
         {action}
       </div>
-      <div className="mt-4">{children}</div>
+      <div className="mt-4 min-h-0 flex-1">{children}</div>
     </section>
   );
 }
@@ -252,6 +252,53 @@ function AttendanceSummaryBlock({
         <MiniStat label="지각" value={formatNumber(late)} />
         <MiniStat label="결석" value={formatNumber(absent)} />
         <MiniStat label="공결" value={formatNumber(excused)} />
+      </div>
+    </div>
+  );
+}
+
+function CompactAttendanceLine({
+  title,
+  rate,
+  total,
+  present,
+  late,
+  absent,
+  excused,
+}: {
+  title: string;
+  rate: number;
+  total: number;
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+}) {
+  const items = [
+    ["출석", present],
+    ["지각", late],
+    ["결석", absent],
+    ["공결", excused],
+  ] as const;
+
+  return (
+    <div className="rounded-md bg-white/6 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs font-black text-[#81949e]">{title}</div>
+          <div className="mt-1 font-mono text-3xl font-black leading-none text-white">{formatPercent(rate)}</div>
+        </div>
+        <div className="shrink-0 text-right text-xs font-semibold leading-5 text-[#7f939f]">
+          {formatNumber(total)}건
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-4 gap-2">
+        {items.map(([label, value]) => (
+          <div key={label} className="min-w-0 rounded-md bg-black/14 px-2 py-2">
+            <div className="truncate text-[11px] font-semibold text-[#81949e]">{label}</div>
+            <div className="mt-1 font-mono text-lg font-black leading-none text-white">{formatNumber(value)}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -410,8 +457,8 @@ function Overview({ summary }: { summary: DashboardSummary }) {
   const attentionTotal = summary.metrics.highRisk + summary.metrics.mediumRisk;
 
   return (
-    <div className="grid min-h-0 gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[1.1fr_0.9fr] xl:grid-rows-[1fr_1fr]">
+      <div className="grid h-full min-h-0 auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
         <MetricTile
           title="전체 학생"
           value={formatNumber(summary.metrics.totalStudents)}
@@ -438,7 +485,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
         <MetricTile
           title="출결 관찰 대상"
           value={formatNumber(summary.metrics.attendanceObservationTargets)}
-          caption={`3과목 이상 결석 · 5과목 ${formatNumber(summary.metrics.absenceOver5)}명 · 7과목 ${formatNumber(summary.metrics.absenceOver7)}명`}
+          caption={`3과목 이상 결석 · 5과목 이상 ${formatNumber(summary.metrics.absenceOver5)}명 · 7과목 이상 ${formatNumber(summary.metrics.absenceOver7)}명`}
           tone={summary.metrics.attendanceObservationTargets > 0 ? "amber" : "green"}
         />
         <MetricTile
@@ -462,8 +509,8 @@ function Overview({ summary }: { summary: DashboardSummary }) {
           </button>
         }
       >
-        <div className="grid gap-3">
-          <AttendanceSummaryBlock
+        <div className="grid h-full min-h-0 content-between gap-2">
+          <CompactAttendanceLine
             title="오늘 출결"
             rate={summary.metrics.attendanceRate}
             total={summary.metrics.attendanceEvents}
@@ -472,7 +519,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
             absent={summary.metrics.todayAbsent}
             excused={summary.metrics.todayExcused}
           />
-          <AttendanceSummaryBlock
+          <CompactAttendanceLine
             title="최근 1주일 출결"
             rate={summary.metrics.weeklyAttendanceRate}
             total={summary.metrics.weeklyAttendanceEvents}
@@ -481,14 +528,6 @@ function Overview({ summary }: { summary: DashboardSummary }) {
             absent={summary.metrics.weeklyAbsent}
             excused={summary.metrics.weeklyExcused}
           />
-          <div>
-            <div className="mb-2 text-xs font-black text-[#81949e]">출결 관찰 대상</div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              <MiniStat label="3과목 이상" value={formatNumber(summary.metrics.absenceOver3)} />
-              <MiniStat label="5과목 이상" value={formatNumber(summary.metrics.absenceOver5)} />
-              <MiniStat label="7과목 이상" value={formatNumber(summary.metrics.absenceOver7)} />
-            </div>
-          </div>
         </div>
       </Panel>
 
@@ -501,7 +540,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
       </Panel>
 
       <Panel title="인증지표 요약">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid h-full min-h-0 auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <MiniStat label="중도탈락율" value={formatPercent(summary.metrics.dropoutRate)} />
           <MiniStat label="토픽취득율" value={formatPercent(summary.metrics.topikRate)} />
           <MiniStat label="보험가입율" value={formatPercent(summary.metrics.insuranceCoverageRate)} />
@@ -514,8 +553,8 @@ function Overview({ summary }: { summary: DashboardSummary }) {
 
 function AttendanceView({ summary }: { summary: DashboardSummary }) {
   return (
-    <div className="grid min-h-0 gap-4 xl:grid-cols-[0.82fr_1.18fr]">
-      <div className="grid min-h-0 gap-4">
+    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[0.82fr_1.18fr]">
+      <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[1fr_auto]">
         <Panel title="출결상황">
           <div className="grid gap-4">
             <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
@@ -547,7 +586,7 @@ function AttendanceView({ summary }: { summary: DashboardSummary }) {
         </Panel>
       </div>
 
-      <div className="grid min-h-0 gap-4">
+      <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[auto_1fr]">
         <Panel title="결석 누적 관찰">
           <div className="grid gap-4">
             <div className="text-sm font-semibold leading-6 text-[#9eb0bb]">
@@ -585,7 +624,7 @@ function StatusView({ summary, mode }: { summary: DashboardSummary; mode: Mode }
   const items = itemsByMode[mode] || itemsByMode.status;
 
   return (
-    <div className="grid min-h-0 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[1.25fr_0.75fr]">
       <Panel title={titles[mode] || "현황"}>
         <BigBars items={items} limit={mode === "department" ? 10 : 8} />
       </Panel>
@@ -753,8 +792,8 @@ function CertificationView({ summary, mode }: { summary: DashboardSummary; mode:
   const selected = indicators.find((indicator) => indicator.mode === mode) || indicators[0];
 
   return (
-    <div className="grid min-h-0 gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-      <div className="grid gap-4 sm:grid-cols-2">
+    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid h-full min-h-0 auto-rows-fr gap-3 sm:grid-cols-2">
         {indicators.map((indicator) => (
           <IndicatorCard
             key={indicator.mode}
@@ -764,7 +803,7 @@ function CertificationView({ summary, mode }: { summary: DashboardSummary; mode:
         ))}
       </div>
 
-      <div className="grid min-h-0 gap-4">
+      <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[1fr_1fr]">
         <Panel title="교육국제화역량 인증제 추진계획">
           <CertificationDetail indicator={selected} />
         </Panel>
@@ -817,12 +856,12 @@ export function DashboardMonitor({ activeMode, summary }: { activeMode: Mode; su
       <div className="fixed inset-0 -z-10 bg-[linear-gradient(135deg,#081018_0%,#0d1b22_48%,#10130f_100%)]" />
       <div className="noise-layer opacity-[0.025]" />
 
-      <div className="flex min-h-screen flex-col px-4 py-4 sm:px-5 lg:h-screen">
-        <header className="shrink-0 border-b border-white/10 pb-3">
+      <div className="flex min-h-screen flex-col px-3 py-3 sm:px-4 lg:h-screen">
+        <header className="shrink-0 border-b border-white/10 pb-2">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
             <div>
               <div className="text-xs font-black uppercase tracking-[0.2em] text-[#47d7c6]">KMUST Live Board</div>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-white xl:text-5xl">
+              <h1 className="mt-1 text-3xl font-black tracking-tight text-white xl:text-4xl 2xl:text-5xl">
                 외국인학생 현황 대시보드
               </h1>
             </div>
@@ -833,14 +872,14 @@ export function DashboardMonitor({ activeMode, summary }: { activeMode: Mode; su
             </div>
           </div>
 
-          <form action="/" className="mt-4 grid gap-3 xl:grid-cols-[auto_1fr_1fr]" aria-label="대시보드 모드 선택">
+          <form action="/" className="mt-3 grid gap-2 xl:grid-cols-[auto_1fr_1fr]" aria-label="대시보드 모드 선택">
             <ModeGroup activeMode={activeMode} title="대시보드" items={primaryModes} />
             <ModeGroup activeMode={activeMode} title="현황" items={statusModes} />
             <ModeGroup activeMode={activeMode} title="인증" items={certificationModes} />
           </form>
         </header>
 
-        <section className="min-h-0 flex-1 py-4">
+        <section className="dashboard-stage min-h-0 flex-1 py-3">
           <form action="/" className="contents">
             <ActivePanel activeMode={activeMode} summary={summary} />
           </form>

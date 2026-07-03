@@ -120,3 +120,21 @@ test("attendance mode renders absence threshold counts and student lists", async
     assert.match(html, new RegExp(text), `${text} should be rendered`);
   }
 });
+
+test("overview uses a full-height monitor grid", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedClasses = [
+    "dashboard-stage",
+    "monitor-grid",
+    "monitor-panel",
+    "auto-rows-fr",
+    "xl:grid-rows-[1fr_1fr]",
+  ];
+
+  for (const className of expectedClasses) {
+    assert.match(html, new RegExp(className.replaceAll("[", "\\[").replaceAll("]", "\\]")), `${className} should be rendered`);
+  }
+});
