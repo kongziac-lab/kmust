@@ -457,96 +457,100 @@ function Overview({ summary }: { summary: DashboardSummary }) {
   const attentionTotal = summary.metrics.highRisk + summary.metrics.mediumRisk;
 
   return (
-    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[1.1fr_0.9fr] xl:grid-rows-[1fr_1fr]">
-      <div className="grid h-full min-h-0 auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <MetricTile
-          title="전체 학생"
-          value={formatNumber(summary.metrics.totalStudents)}
-          caption={`${summary.dataSource.label} · ${formatNumber(summary.dataSource.recordCount)}명`}
-        />
-        <MetricTile
-          title="재학생"
-          value={formatNumber(summary.metrics.activeStudents)}
-          caption="학적상태 재학 기준"
-          tone="green"
-        />
-        <MetricTile
-          title="오늘 출석률"
-          value={formatPercent(summary.metrics.attendanceRate)}
-          caption={`${formatNumber(summary.metrics.attendanceEvents)}건 출결 이벤트`}
-          tone="blue"
-        />
-        <MetricTile
-          title="최근 1주일 출석률"
-          value={formatPercent(summary.metrics.weeklyAttendanceRate)}
-          caption={`${formatNumber(summary.metrics.weeklyAttendanceEvents)}건 출결 이벤트`}
-          tone="teal"
-        />
-        <MetricTile
-          title="출결 관찰 대상"
-          value={formatNumber(summary.metrics.attendanceObservationTargets)}
-          caption={`3과목 이상 결석 · 5과목 이상 ${formatNumber(summary.metrics.absenceOver5)}명 · 7과목 이상 ${formatNumber(summary.metrics.absenceOver7)}명`}
-          tone={summary.metrics.attendanceObservationTargets > 0 ? "amber" : "green"}
-        />
-        <MetricTile
-          title="주의 학생"
-          value={formatNumber(attentionTotal)}
-          caption={`고위험 ${formatNumber(summary.metrics.highRisk)}명 · 주의 ${formatNumber(summary.metrics.mediumRisk)}명`}
-          tone={attentionTotal > 0 ? "red" : "green"}
-        />
+    <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[1.1fr_0.9fr]">
+      <div className="overview-left-column grid h-full min-h-0 gap-3 xl:grid-rows-[1fr_1fr]">
+        <div className="grid h-full min-h-0 auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <MetricTile
+            title="전체 학생"
+            value={formatNumber(summary.metrics.totalStudents)}
+            caption={`${summary.dataSource.label} · ${formatNumber(summary.dataSource.recordCount)}명`}
+          />
+          <MetricTile
+            title="재학생"
+            value={formatNumber(summary.metrics.activeStudents)}
+            caption="학적상태 재학 기준"
+            tone="green"
+          />
+          <MetricTile
+            title="오늘 출석률"
+            value={formatPercent(summary.metrics.attendanceRate)}
+            caption={`${formatNumber(summary.metrics.attendanceEvents)}건 출결 이벤트`}
+            tone="blue"
+          />
+          <MetricTile
+            title="최근 1주일 출석률"
+            value={formatPercent(summary.metrics.weeklyAttendanceRate)}
+            caption={`${formatNumber(summary.metrics.weeklyAttendanceEvents)}건 출결 이벤트`}
+            tone="teal"
+          />
+          <MetricTile
+            title="출결 관찰 대상"
+            value={formatNumber(summary.metrics.attendanceObservationTargets)}
+            caption={`3과목 이상 결석 · 5과목 이상 ${formatNumber(summary.metrics.absenceOver5)}명 · 7과목 이상 ${formatNumber(summary.metrics.absenceOver7)}명`}
+            tone={summary.metrics.attendanceObservationTargets > 0 ? "amber" : "green"}
+          />
+          <MetricTile
+            title="주의 학생"
+            value={formatNumber(attentionTotal)}
+            caption={`고위험 ${formatNumber(summary.metrics.highRisk)}명 · 주의 ${formatNumber(summary.metrics.mediumRisk)}명`}
+            tone={attentionTotal > 0 ? "red" : "green"}
+          />
+        </div>
+
+        <Panel title="현황 주요 분포">
+          <div className="grid gap-5 lg:grid-cols-3">
+            <ProgressRows items={summary.distributions.program} limit={5} />
+            <ProgressRows items={summary.distributions.nationality} limit={5} />
+            <ProgressRows items={summary.distributions.gender} limit={5} />
+          </div>
+        </Panel>
       </div>
 
-      <Panel
-        title="오늘 출결"
-        action={
-          <button
-            type="submit"
-            name="mode"
-            value="attendance"
-            className="rounded-md bg-white/8 px-3 py-2 text-xs font-bold text-[#dce8ed] transition-smooth hover:bg-white/12"
-          >
-            출결상황
-          </button>
-        }
-      >
-        <div className="grid h-full min-h-0 content-between gap-2">
-          <CompactAttendanceLine
-            title="오늘 출결"
-            rate={summary.metrics.attendanceRate}
-            total={summary.metrics.attendanceEvents}
-            present={summary.metrics.todayPresent}
-            late={summary.metrics.todayLate}
-            absent={summary.metrics.todayAbsent}
-            excused={summary.metrics.todayExcused}
-          />
-          <CompactAttendanceLine
-            title="최근 1주일 출결"
-            rate={summary.metrics.weeklyAttendanceRate}
-            total={summary.metrics.weeklyAttendanceEvents}
-            present={summary.metrics.weeklyPresent}
-            late={summary.metrics.weeklyLate}
-            absent={summary.metrics.weeklyAbsent}
-            excused={summary.metrics.weeklyExcused}
-          />
-        </div>
-      </Panel>
+      <div className="overview-right-column grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+        <Panel
+          title="오늘 출결"
+          action={
+            <button
+              type="submit"
+              name="mode"
+              value="attendance"
+              className="rounded-md bg-white/8 px-3 py-2 text-xs font-bold text-[#dce8ed] transition-smooth hover:bg-white/12"
+            >
+              출결상황
+            </button>
+          }
+        >
+          <div className="grid h-full min-h-0 content-between gap-2">
+            <CompactAttendanceLine
+              title="오늘 출결"
+              rate={summary.metrics.attendanceRate}
+              total={summary.metrics.attendanceEvents}
+              present={summary.metrics.todayPresent}
+              late={summary.metrics.todayLate}
+              absent={summary.metrics.todayAbsent}
+              excused={summary.metrics.todayExcused}
+            />
+            <CompactAttendanceLine
+              title="최근 1주일 출결"
+              rate={summary.metrics.weeklyAttendanceRate}
+              total={summary.metrics.weeklyAttendanceEvents}
+              present={summary.metrics.weeklyPresent}
+              late={summary.metrics.weeklyLate}
+              absent={summary.metrics.weeklyAbsent}
+              excused={summary.metrics.weeklyExcused}
+            />
+          </div>
+        </Panel>
 
-      <Panel title="현황 주요 분포">
-        <div className="grid gap-5 lg:grid-cols-3">
-          <ProgressRows items={summary.distributions.program} limit={5} />
-          <ProgressRows items={summary.distributions.nationality} limit={5} />
-          <ProgressRows items={summary.distributions.gender} limit={5} />
-        </div>
-      </Panel>
-
-      <Panel title="인증지표 요약">
-        <div className="grid h-full min-h-0 auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MiniStat label="중도탈락율" value={formatPercent(summary.metrics.dropoutRate)} />
-          <MiniStat label="토픽취득율" value={formatPercent(summary.metrics.topikRate)} />
-          <MiniStat label="보험가입율" value={formatPercent(summary.metrics.insuranceCoverageRate)} />
-          <MiniStat label="상담비율" value={formatPercent(summary.metrics.counselingTargetRate)} />
-        </div>
-      </Panel>
+        <Panel title="인증지표 요약">
+          <div className="grid h-full min-h-0 auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MiniStat label="중도탈락율" value={formatPercent(summary.metrics.dropoutRate)} />
+            <MiniStat label="토픽취득율" value={formatPercent(summary.metrics.topikRate)} />
+            <MiniStat label="보험가입율" value={formatPercent(summary.metrics.insuranceCoverageRate)} />
+            <MiniStat label="상담비율" value={formatPercent(summary.metrics.counselingTargetRate)} />
+          </div>
+        </Panel>
+      </div>
     </div>
   );
 }

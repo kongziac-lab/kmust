@@ -22,6 +22,10 @@ function getHtml(url) {
   });
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 test("monitor dashboard exposes the requested mode buttons", async () => {
   const response = await getHtml(baseUrl);
   assert.equal(response.status, 200);
@@ -130,11 +134,13 @@ test("overview uses a full-height monitor grid", async () => {
     "dashboard-stage",
     "monitor-grid",
     "monitor-panel",
+    "overview-left-column",
+    "overview-right-column",
     "auto-rows-fr",
-    "xl:grid-rows-[1fr_1fr]",
+    "xl:grid-rows-[minmax(0,0.92fr)_minmax(0,1.08fr)]",
   ];
 
   for (const className of expectedClasses) {
-    assert.match(html, new RegExp(className.replaceAll("[", "\\[").replaceAll("]", "\\]")), `${className} should be rendered`);
+    assert.match(html, new RegExp(escapeRegExp(className)), `${className} should be rendered`);
   }
 });
