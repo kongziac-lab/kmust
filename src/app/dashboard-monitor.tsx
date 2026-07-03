@@ -448,7 +448,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
         </Panel>
       </div>
 
-      <div className="overview-right-column grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
+      <div className="overview-right-column grid h-full min-h-0 gap-3 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
         <Panel
           title="오늘 출결"
           action={
@@ -485,12 +485,7 @@ function Overview({ summary }: { summary: DashboardSummary }) {
         </Panel>
 
         <Panel title="인증지표 요약">
-          <div className="grid h-full min-h-0 auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MiniStat label="중도탈락율" value={formatPercent(summary.metrics.dropoutRate)} />
-            <MiniStat label="토픽취득율" value={formatPercent(summary.metrics.topikRate)} />
-            <MiniStat label="보험가입율" value={formatPercent(summary.metrics.insuranceCoverageRate)} />
-            <MiniStat label="상담비율" value={formatPercent(summary.metrics.counselingTargetRate)} />
-          </div>
+          <CertificationSummaryGrid summary={summary} />
         </Panel>
       </div>
     </div>
@@ -656,6 +651,56 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       items: summary.distributions.counseling,
     },
   ];
+}
+
+function getStatusBadgeClass(status: string) {
+  if (status === "관리 필요") {
+    return "border-[#f07188]/65 bg-[#f07188]/18 text-[#ffd6de] shadow-[0_0_26px_rgba(240,113,136,0.18)]";
+  }
+
+  if (status === "정성 관리") {
+    return "border-[#e8c46a]/55 bg-[#e8c46a]/16 text-[#ffe6a1]";
+  }
+
+  return "border-[#80d88a]/45 bg-[#80d88a]/12 text-[#d7ffd8]";
+}
+
+function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
+  const indicators = getCertificationIndicators(summary);
+
+  return (
+    <div className="grid h-full min-h-0 auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {indicators.map((indicator) => (
+        <section
+          key={indicator.mode}
+          className={`summary-certification-card flex h-full min-h-0 flex-col rounded-lg border p-3.5 ${
+            indicator.status === "관리 필요"
+              ? "border-[#f07188]/45 bg-[#251018]"
+              : "border-white/[0.07] bg-white/[0.045]"
+          }`}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div className="text-sm font-black text-[#c7d5dc]">{indicator.title}</div>
+            <span
+              className={`summary-status-badge shrink-0 rounded-md border px-2 py-1 text-[11px] font-black ${getStatusBadgeClass(indicator.status)}`}
+            >
+              {indicator.status}
+            </span>
+          </div>
+
+          <div className="mt-3 flex items-end justify-between gap-3">
+            <div className="font-mono text-3xl font-black leading-none text-white">{indicator.value}</div>
+            <div className="text-right font-mono text-xs font-black text-[#47d7c6]">{indicator.count}</div>
+          </div>
+
+          <div className="mt-3 grid gap-2 text-xs font-semibold leading-5 text-[#9eb0bb]">
+            <div>{indicator.criterion}</div>
+            <div className="rounded-md bg-black/16 px-2 py-1.5 text-[#c4d2d9]">{indicator.note}</div>
+          </div>
+        </section>
+      ))}
+    </div>
+  );
 }
 
 function IndicatorCard({

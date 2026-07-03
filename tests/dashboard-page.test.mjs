@@ -106,6 +106,26 @@ test("overview renders today and weekly attendance observation summaries", async
   }
 });
 
+test("overview certification summary renders details and management badges", async () => {
+  const response = await getHtml(baseUrl);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "인증지표 요약",
+    "summary-certification-card",
+    "summary-status-badge",
+    "문서 기준: 의료보험 가입률 95% 이상",
+    "1,790 / 2,619명",
+    "관리 필요",
+    "정성 관리",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered`);
+  }
+});
+
 test("attendance mode renders absence threshold counts and student lists", async () => {
   const response = await getHtml(`${baseUrl}/?mode=attendance`);
   assert.equal(response.status, 200);
@@ -191,7 +211,7 @@ test("overview uses a full-height monitor grid", async () => {
     "overview-left-column",
     "overview-right-column",
     "auto-rows-fr",
-    "xl:grid-rows-[minmax(0,0.92fr)_minmax(0,1.08fr)]",
+    "xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]",
   ];
 
   for (const className of expectedClasses) {
