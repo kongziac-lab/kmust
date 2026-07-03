@@ -39,7 +39,7 @@ test("monitor dashboard exposes the requested mode buttons", async () => {
     "국가별",
     "학과별",
     "학년별",
-    "과정·국가",
+    "조합분석",
     "인증지표",
     "중도탈락율",
     "토픽취득율",
@@ -209,7 +209,8 @@ test("status mode renders one-page status overview without gender mode", async (
     "국가별 현황",
     "학과별 현황",
     "학년별 현황",
-    "과정 및 국가별 학생 현황",
+    "조합분석",
+    "과정별 국가 현황",
     "status-overview-grid",
     "status-overview-panel",
     "상세내역",
@@ -228,7 +229,7 @@ test("status category modes render detailed breakdowns", async () => {
     ["nationality", "국가별 상세내역", "베트남"],
     ["department", "학과별 상세내역", "경영학과"],
     ["grade", "학년별 상세내역", "1학년"],
-    ["programNationality", "과정 및 국가별 상세내역", "학사과정 · 베트남"],
+    ["programNationality", "조합분석", "과정별 국가 현황"],
   ];
 
   for (const [mode, title, sampleItem] of cases) {
@@ -252,6 +253,35 @@ test("status category modes render detailed breakdowns", async () => {
   }
 });
 
+test("status combination mode renders free combination controls", async () => {
+  const response = await getHtml(`${baseUrl}/?mode=programNationality`);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "조합분석",
+    "과정별 국가 현황",
+    "data-combination-analysis",
+    "data-combination-row-dimension=\"program\"",
+    "data-combination-column-dimension=\"nationality\"",
+    "기준",
+    "세부",
+    "필터 기준",
+    "필터 값",
+    "전체",
+    "과정",
+    "국가",
+    "학과",
+    "학년",
+    "학사과정",
+    "베트남",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered for free combination mode`);
+  }
+});
+
 test("dashboard summary exposes enrollment-filtered status distributions", async () => {
   const response = await getHtml(`${baseUrl}/api/dashboard/summary`);
   assert.equal(response.status, 200);
@@ -265,6 +295,12 @@ test("dashboard summary exposes enrollment-filtered status distributions", async
   const combined = summary.statusGroups.enrolled.distributions.programNationality;
   assert.equal(Array.isArray(combined), true);
   assert.equal(combined.some((item) => item.name.includes(" · ") && item.value > 0), true);
+
+  const records = summary.statusGroups.enrolled.records;
+  assert.equal(Array.isArray(records), true);
+  assert.equal(records.length, summary.statusGroups.enrolled.total);
+  assert.deepEqual(Object.keys(records[0]).sort(), ["department", "grade", "nationality", "program"]);
+  assert.equal("studentNo" in records[0], false);
 });
 
 test("attendance and certification modes use bounded monitor layouts", async () => {

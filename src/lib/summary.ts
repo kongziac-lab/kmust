@@ -51,9 +51,19 @@ function buildProgramNationalityName(student: Student) {
   return `${student.program || "미상"} · ${student.nationality || "미상"}`;
 }
 
+function buildStatusRecord(student: Student) {
+  return {
+    program: student.program || "미상",
+    nationality: student.nationality || "미상",
+    department: student.department || "미상",
+    grade: student.grade ? `${student.grade}학년` : "미상",
+  };
+}
+
 function buildStatusGroup(students: Student[]) {
   return {
     total: students.length,
+    records: students.map(buildStatusRecord),
     distributions: {
       program: countBy(students, (student) => student.program),
       nationality: countBy(students, (student) => student.nationality).slice(0, 10),

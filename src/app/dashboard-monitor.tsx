@@ -11,6 +11,14 @@ type DistributionItem = {
 
 type ModeChangeHandler = (mode: Mode) => void;
 type EnrollmentFilter = "enrolled" | "active" | "leave";
+type StatusDimension = "program" | "nationality" | "department" | "grade";
+type StatusFilterDimension = "all" | StatusDimension;
+type StatusRecord = DashboardSummary["statusGroups"]["enrolled"]["records"][number];
+type CombinationRow = {
+  name: string;
+  value: number;
+  segments: DistributionItem[];
+};
 
 const primaryModes: { label: string; mode: Mode }[] = [
   { label: "총괄보기", mode: "overview" },
@@ -24,7 +32,7 @@ const statusModes: { label: string; mode: Mode }[] = [
   { label: "국가별", mode: "nationality" },
   { label: "학과별", mode: "department" },
   { label: "학년별", mode: "grade" },
-  { label: "과정·국가", mode: "programNationality" },
+  { label: "조합분석", mode: "programNationality" },
 ];
 
 const enrollmentFilters: { label: string; value: EnrollmentFilter }[] = [
@@ -44,6 +52,16 @@ const statusModeSet = new Set<Mode>(["status", "program", "nationality", "depart
 const certificationModeSet = new Set<Mode>(["certification", "insurance", "topik", "dropout", "counseling"]);
 const dashboardSummaryEndpoint = "/api/dashboard/summary";
 const dashboardSummaryPollingMs = 10_000;
+const statusDimensionOptions: { label: string; value: StatusDimension }[] = [
+  { label: "과정", value: "program" },
+  { label: "국가", value: "nationality" },
+  { label: "학과", value: "department" },
+  { label: "학년", value: "grade" },
+];
+const statusFilterOptions: { label: string; value: StatusFilterDimension }[] = [
+  { label: "전체", value: "all" },
+  ...statusDimensionOptions,
+];
 
 function formatNumber(value: number) {
   return value.toLocaleString("ko-KR");
@@ -55,6 +73,93 @@ function formatRatioCount(value: number, total: number) {
 
 function formatPercent(value: number) {
   return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
+}
+
+function getStatusDimensionLabel(dimension: StatusDimension) {
+  return statusDimensionOptions.find((item) => item.value === dimension)?.label || "현황";
+}
+
+function getAlternateDimension(dimension: StatusDimension) {
+  return statusDimensionOptions.find((item) => item.value !== dimension)?.value || "program";
+}
+
+function getStatusRecordValue(record: StatusRecord, dimension: StatusDimension) {
+  return record[dimension] || "미상";
+}
+
+function sortKoreanValue(a: string, b: string) {
+  return a.localeCompare(b, "ko-KR", { numeric: true });
+}
+
+function getStatusDimensionValues(records: StatusRecord[], dimension: StatusDimension) {
+  return [...new Set(records.map((record) => getStatusRecordValue(record, dimension)))].sort(sortKoreanValue);
+}
+
+function getEffectiveFilterValue(
+  records: StatusRecord[],
+  filterDimension: StatusFilterDimension,
+  filterValue: string,
+) {
+  if (filterDimension === "all") return "";
+
+  const values = getStatusDimensionValues(records, filterDimension);
+  return values.includes(filterValue) ? filterValue : values[0] || "";
+}
+
+function getFilteredStatusRecords(
+  records: StatusRecord[],
+  filterDimension: StatusFilterDimension,
+  filterValue: string,
+) {
+  if (filterDimension === "all" || !filterValue) return records;
+
+  return records.filter((record) => getStatusRecordValue(record, filterDimension) === filterValue);
+}
+
+function buildCombinationRows(
+  records: StatusRecord[],
+  rowDimension: StatusDimension,
+  columnDimension: StatusDimension,
+): CombinationRow[] {
+  const rows = new Map<string, Map<string, number>>();
+
+  for (const record of records) {
+    const rowKey = getStatusRecordValue(record, rowDimension);
+    const columnKey = getStatusRecordValue(record, columnDimension);
+    const row = rows.get(rowKey) || new Map<string, number>();
+
+    row.set(columnKey, (row.get(columnKey) || 0) + 1);
+    rows.set(rowKey, row);
+  }
+
+  return [...rows.entries()]
+    .map(([name, columnCounts]) => {
+      const segments = [...columnCounts.entries()]
+        .map(([segmentName, value]) => ({ name: segmentName, value }))
+        .sort((a, b) => b.value - a.value || sortKoreanValue(a.name, b.name));
+
+      return {
+        name,
+        value: segments.reduce((sum, segment) => sum + segment.value, 0),
+        segments,
+      };
+    })
+    .sort((a, b) => b.value - a.value || sortKoreanValue(a.name, b.name));
+}
+
+function getCombinationTitle(
+  rowDimension: StatusDimension,
+  columnDimension: StatusDimension,
+  filterDimension: StatusFilterDimension,
+  filterValue: string,
+) {
+  const title = `${getStatusDimensionLabel(rowDimension)}별 ${getStatusDimensionLabel(columnDimension)} 현황`;
+
+  if (filterDimension === "all" || !filterValue) {
+    return title;
+  }
+
+  return `${filterValue} 기준 ${title}`;
 }
 
 function getSeoulDateParts(value: string | Date) {
@@ -743,7 +848,6 @@ function getStatusDetailConfig(group: StatusGroup, mode: Mode) {
     nationality: { title: "국가별", items: group.distributions.nationality, limit: 12 },
     department: { title: "학과별", items: group.distributions.department, limit: 12 },
     grade: { title: "학년별", items: group.distributions.grade, limit: 10 },
-    programNationality: { title: "과정 및 국가별", items: group.distributions.programNationality, limit: 14 },
   };
 
   return configs[mode] || null;
@@ -793,20 +897,360 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
   );
 }
 
+function DimensionButton({
+  active,
+  disabled,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onClick}
+      className={`min-w-14 rounded px-2.5 py-2 text-xs font-black transition-smooth ${
+        active
+          ? "bg-[#47d7c6] text-[#061116]"
+          : "bg-white/[0.055] text-[#a9bac4] ring-1 ring-white/[0.06] hover:bg-white/[0.09] hover:text-white"
+      } disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-white/[0.055] disabled:hover:text-[#a9bac4]`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function StatusDimensionControl({
+  disabledValues = [],
+  label,
+  onChange,
+  value,
+}: {
+  disabledValues?: StatusDimension[];
+  label: string;
+  onChange: (value: StatusDimension) => void;
+  value: StatusDimension;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-2 text-[11px] font-black text-[#718691]">{label}</div>
+      <div className="grid grid-cols-4 gap-1" role="group" aria-label={label}>
+        {statusDimensionOptions.map((item) => (
+          <DimensionButton
+            key={item.value}
+            active={value === item.value}
+            disabled={disabledValues.includes(item.value)}
+            label={item.label}
+            onClick={() => onChange(item.value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StatusFilterDimensionControl({
+  onChange,
+  value,
+}: {
+  onChange: (value: StatusFilterDimension) => void;
+  value: StatusFilterDimension;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="mb-2 text-[11px] font-black text-[#718691]">필터 기준</div>
+      <div className="grid grid-cols-5 gap-1" role="group" aria-label="필터 기준">
+        {statusFilterOptions.map((item) => (
+          <DimensionButton
+            key={item.value}
+            active={value === item.value}
+            label={item.label}
+            onClick={() => onChange(item.value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StatusFilterValueControl({
+  filterDimension,
+  filterValue,
+  onFilterValueChange,
+  records,
+}: {
+  filterDimension: StatusFilterDimension;
+  filterValue: string;
+  onFilterValueChange: (value: string) => void;
+  records: StatusRecord[];
+}) {
+  const filterValues = filterDimension === "all" ? [] : getStatusDimensionValues(records, filterDimension);
+  const effectiveValue = getEffectiveFilterValue(records, filterDimension, filterValue);
+
+  return (
+    <label className="min-w-0">
+      <div className="mb-2 text-[11px] font-black text-[#718691]">필터 값</div>
+      <select
+        value={effectiveValue}
+        disabled={filterDimension === "all" || filterValues.length === 0}
+        onChange={(event) => onFilterValueChange(event.target.value)}
+        className="h-9 w-full rounded-md border border-white/[0.08] bg-white/[0.055] px-3 text-xs font-black text-[#dce8ed] outline-none transition-smooth focus:border-[#47d7c6]/65 disabled:opacity-55"
+      >
+        {filterDimension === "all" ? (
+          <option value="">전체</option>
+        ) : (
+          filterValues.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))
+        )}
+      </select>
+    </label>
+  );
+}
+
+function StatusCombinationControls({
+  columnDimension,
+  filterDimension,
+  filterValue,
+  onColumnDimensionChange,
+  onFilterDimensionChange,
+  onFilterValueChange,
+  onRowDimensionChange,
+  records,
+  rowDimension,
+}: {
+  columnDimension: StatusDimension;
+  filterDimension: StatusFilterDimension;
+  filterValue: string;
+  onColumnDimensionChange: (value: StatusDimension) => void;
+  onFilterDimensionChange: (value: StatusFilterDimension) => void;
+  onFilterValueChange: (value: string) => void;
+  onRowDimensionChange: (value: StatusDimension) => void;
+  records: StatusRecord[];
+  rowDimension: StatusDimension;
+}) {
+  return (
+    <div className="combination-controls grid min-h-0 gap-3 rounded-lg border border-white/[0.08] bg-[#0b151b]/92 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] md:grid-cols-2 2xl:grid-cols-[1fr_1fr_1.2fr_0.9fr]">
+      <StatusDimensionControl
+        disabledValues={[columnDimension]}
+        label="기준"
+        onChange={onRowDimensionChange}
+        value={rowDimension}
+      />
+      <StatusDimensionControl
+        disabledValues={[rowDimension]}
+        label="세부"
+        onChange={onColumnDimensionChange}
+        value={columnDimension}
+      />
+      <StatusFilterDimensionControl onChange={onFilterDimensionChange} value={filterDimension} />
+      <StatusFilterValueControl
+        filterDimension={filterDimension}
+        filterValue={filterValue}
+        onFilterValueChange={onFilterValueChange}
+        records={records}
+      />
+    </div>
+  );
+}
+
+function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationRow[]; total: number; limit?: number }) {
+  const shown = rows.slice(0, limit);
+
+  if (shown.length === 0) {
+    return (
+      <div className="grid h-full place-items-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.035] text-sm font-bold text-[#8fa2ad]">
+        대상 없음
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid h-full min-h-0 gap-2 overflow-y-auto pr-1">
+      {shown.map((row, index) => {
+        const rowPercent = total === 0 ? 0 : (row.value / total) * 100;
+
+        return (
+          <div
+            key={row.name}
+            className="status-detail-row rounded-md border border-white/[0.05] bg-white/[0.045] px-3 py-2.5"
+          >
+            <div className="grid items-start gap-3 sm:grid-cols-[auto_1fr_auto]">
+              <div className="font-mono text-xs font-black text-[#47d7c6]">{String(index + 1).padStart(2, "0")}</div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-black text-white">{row.name}</div>
+                <div className="mt-1 font-mono text-xs font-bold text-[#81949e]">{rowPercent.toFixed(1)}%</div>
+              </div>
+              <div className="text-right font-mono text-sm font-black text-[#47d7c6]">{formatNumber(row.value)}명</div>
+            </div>
+
+            <div className="mt-3 grid gap-2">
+              {row.segments.slice(0, 5).map((segment) => {
+                const segmentPercent = row.value === 0 ? 0 : (segment.value / row.value) * 100;
+
+                return (
+                  <div key={`${row.name}-${segment.name}`} className="grid gap-1">
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="truncate font-bold text-[#c8d5dc]">{segment.name}</span>
+                      <span className="shrink-0 font-mono font-black text-[#47d7c6]">
+                        {formatNumber(segment.value)}명 · {segmentPercent.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#47d7c6] via-[#6aa8ff] to-[#e8c46a]"
+                        style={{ width: `${Math.max(segmentPercent, 3)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StatusCombinationView({
+  columnDimension,
+  enrollmentFilter,
+  filterDimension,
+  filterValue,
+  onColumnDimensionChange,
+  onEnrollmentFilterChange,
+  onFilterDimensionChange,
+  onFilterValueChange,
+  onRowDimensionChange,
+  rowDimension,
+  summary,
+}: {
+  columnDimension: StatusDimension;
+  enrollmentFilter: EnrollmentFilter;
+  filterDimension: StatusFilterDimension;
+  filterValue: string;
+  onColumnDimensionChange: (value: StatusDimension) => void;
+  onEnrollmentFilterChange: (filter: EnrollmentFilter) => void;
+  onFilterDimensionChange: (value: StatusFilterDimension) => void;
+  onFilterValueChange: (value: string) => void;
+  onRowDimensionChange: (value: StatusDimension) => void;
+  rowDimension: StatusDimension;
+  summary: DashboardSummary;
+}) {
+  const group = summary.statusGroups[enrollmentFilter];
+  const effectiveFilterValue = getEffectiveFilterValue(group.records, filterDimension, filterValue);
+  const filteredRecords = getFilteredStatusRecords(group.records, filterDimension, effectiveFilterValue);
+  const rows = buildCombinationRows(filteredRecords, rowDimension, columnDimension);
+  const title = getCombinationTitle(rowDimension, columnDimension, filterDimension, effectiveFilterValue);
+  const rankItems = rows.map((row) => ({ name: row.name, value: row.value }));
+
+  return (
+    <div
+      className="grid h-full min-h-0 gap-3 xl:grid-rows-[auto_minmax(0,1fr)]"
+      data-combination-analysis="true"
+      data-combination-row-dimension={rowDimension}
+      data-combination-column-dimension={columnDimension}
+    >
+      <div className="grid min-h-0 gap-3 xl:grid-cols-[minmax(21rem,0.35fr)_minmax(0,0.65fr)]">
+        <EnrollmentStatusToggle
+          activeFilter={enrollmentFilter}
+          onFilterChange={onEnrollmentFilterChange}
+          summary={summary}
+        />
+        <StatusCombinationControls
+          columnDimension={columnDimension}
+          filterDimension={filterDimension}
+          filterValue={filterValue}
+          onColumnDimensionChange={onColumnDimensionChange}
+          onFilterDimensionChange={onFilterDimensionChange}
+          onFilterValueChange={onFilterValueChange}
+          onRowDimensionChange={onRowDimensionChange}
+          records={group.records}
+          rowDimension={rowDimension}
+        />
+      </div>
+
+      <div className="monitor-grid status-detail-grid grid h-full min-h-0 gap-3 xl:grid-cols-[0.72fr_1.28fr]">
+        <Panel title="분포 순위">
+          <div className="grid h-full min-h-0 gap-3">
+            <div className="rounded-md border border-white/[0.05] bg-white/[0.05] px-3 py-2">
+              <div className="text-xs font-black text-[#81949e]">조합분석</div>
+              <div className="mt-1 text-lg font-black text-white">{title}</div>
+              <div className="mt-2 font-mono text-xs font-bold text-[#47d7c6]">
+                {formatNumber(filteredRecords.length)}명 / {formatNumber(group.total)}명
+              </div>
+            </div>
+            <div className="min-h-0 overflow-hidden">
+              <ProgressRows items={rankItems} limit={8} />
+            </div>
+          </div>
+        </Panel>
+
+        <Panel title={`${title} 상세내역`}>
+          <CombinationDetailRows rows={rows} total={filteredRecords.length} />
+        </Panel>
+      </div>
+    </div>
+  );
+}
+
 function StatusView({
   summary,
   mode,
   onModeChange,
   enrollmentFilter,
   onEnrollmentFilterChange,
+  combinationColumnDimension,
+  combinationFilterDimension,
+  combinationFilterValue,
+  combinationRowDimension,
+  onCombinationColumnDimensionChange,
+  onCombinationFilterDimensionChange,
+  onCombinationFilterValueChange,
+  onCombinationRowDimensionChange,
 }: {
   summary: DashboardSummary;
   mode: Mode;
   onModeChange: ModeChangeHandler;
   enrollmentFilter: EnrollmentFilter;
   onEnrollmentFilterChange: (filter: EnrollmentFilter) => void;
+  combinationColumnDimension: StatusDimension;
+  combinationFilterDimension: StatusFilterDimension;
+  combinationFilterValue: string;
+  combinationRowDimension: StatusDimension;
+  onCombinationColumnDimensionChange: (value: StatusDimension) => void;
+  onCombinationFilterDimensionChange: (value: StatusFilterDimension) => void;
+  onCombinationFilterValueChange: (value: string) => void;
+  onCombinationRowDimensionChange: (value: StatusDimension) => void;
 }) {
   const group = summary.statusGroups[enrollmentFilter];
+
+  if (mode === "programNationality") {
+    return (
+      <StatusCombinationView
+        columnDimension={combinationColumnDimension}
+        enrollmentFilter={enrollmentFilter}
+        filterDimension={combinationFilterDimension}
+        filterValue={combinationFilterValue}
+        onColumnDimensionChange={onCombinationColumnDimensionChange}
+        onEnrollmentFilterChange={onEnrollmentFilterChange}
+        onFilterDimensionChange={onCombinationFilterDimensionChange}
+        onFilterValueChange={onCombinationFilterValueChange}
+        onRowDimensionChange={onCombinationRowDimensionChange}
+        rowDimension={combinationRowDimension}
+        summary={summary}
+      />
+    );
+  }
+
   const detail = getStatusDetailConfig(group, mode);
 
   if (detail) {
@@ -829,6 +1273,11 @@ function StatusView({
       </div>
     );
   }
+
+  const combinationPreviewItems = buildCombinationRows(group.records, "program", "nationality").map((row) => ({
+    name: row.name,
+    value: row.value,
+  }));
 
   return (
     <div className="grid h-full min-h-0 gap-3 xl:grid-rows-[auto_minmax(0,1fr)]">
@@ -867,10 +1316,10 @@ function StatusView({
           limit={6}
         />
         <StatusOverviewPanel
-          title="과정 및 국가별 학생 현황"
+          title="과정별 국가 현황"
           mode="programNationality"
           onModeChange={onModeChange}
-          items={group.distributions.programNationality}
+          items={combinationPreviewItems}
           limit={6}
         />
       </div>
@@ -1141,13 +1590,29 @@ function CertificationView({
 
 function ActivePanel({
   activeMode,
+  combinationColumnDimension,
+  combinationFilterDimension,
+  combinationFilterValue,
+  combinationRowDimension,
   enrollmentFilter,
+  onCombinationColumnDimensionChange,
+  onCombinationFilterDimensionChange,
+  onCombinationFilterValueChange,
+  onCombinationRowDimensionChange,
   onEnrollmentFilterChange,
   onModeChange,
   summary,
 }: {
   activeMode: Mode;
+  combinationColumnDimension: StatusDimension;
+  combinationFilterDimension: StatusFilterDimension;
+  combinationFilterValue: string;
+  combinationRowDimension: StatusDimension;
   enrollmentFilter: EnrollmentFilter;
+  onCombinationColumnDimensionChange: (value: StatusDimension) => void;
+  onCombinationFilterDimensionChange: (value: StatusFilterDimension) => void;
+  onCombinationFilterValueChange: (value: string) => void;
+  onCombinationRowDimensionChange: (value: StatusDimension) => void;
   onEnrollmentFilterChange: (filter: EnrollmentFilter) => void;
   onModeChange: ModeChangeHandler;
   summary: DashboardSummary;
@@ -1159,8 +1624,16 @@ function ActivePanel({
   if (statusModeSet.has(activeMode)) {
     return (
       <StatusView
+        combinationColumnDimension={combinationColumnDimension}
+        combinationFilterDimension={combinationFilterDimension}
+        combinationFilterValue={combinationFilterValue}
+        combinationRowDimension={combinationRowDimension}
         enrollmentFilter={enrollmentFilter}
         mode={activeMode}
+        onCombinationColumnDimensionChange={onCombinationColumnDimensionChange}
+        onCombinationFilterDimensionChange={onCombinationFilterDimensionChange}
+        onCombinationFilterValueChange={onCombinationFilterValueChange}
+        onCombinationRowDimensionChange={onCombinationRowDimensionChange}
         onEnrollmentFilterChange={onEnrollmentFilterChange}
         onModeChange={onModeChange}
         summary={summary}
@@ -1178,6 +1651,10 @@ function ActivePanel({
 export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { activeMode: Mode; summary: DashboardSummary }) {
   const [activeMode, setActiveMode] = useState(initialActiveMode);
   const [enrollmentFilter, setEnrollmentFilter] = useState<EnrollmentFilter>("enrolled");
+  const [combinationRowDimension, setCombinationRowDimension] = useState<StatusDimension>("program");
+  const [combinationColumnDimension, setCombinationColumnDimension] = useState<StatusDimension>("nationality");
+  const [combinationFilterDimension, setCombinationFilterDimension] = useState<StatusFilterDimension>("all");
+  const [combinationFilterValue, setCombinationFilterValue] = useState("");
   const [liveSummary, setLiveSummary] = useState(summary);
   const generatedAt = formatSeoulDateTime(liveSummary.generatedAt);
 
@@ -1243,6 +1720,21 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
     updateModeUrl(mode);
   }
 
+  function handleCombinationRowDimensionChange(dimension: StatusDimension) {
+    setCombinationRowDimension(dimension);
+    setCombinationColumnDimension((current) => (current === dimension ? getAlternateDimension(dimension) : current));
+  }
+
+  function handleCombinationColumnDimensionChange(dimension: StatusDimension) {
+    setCombinationColumnDimension(dimension);
+    setCombinationRowDimension((current) => (current === dimension ? getAlternateDimension(dimension) : current));
+  }
+
+  function handleCombinationFilterDimensionChange(dimension: StatusFilterDimension) {
+    setCombinationFilterDimension(dimension);
+    setCombinationFilterValue("");
+  }
+
   return (
     <main
       className="min-h-screen bg-[#070d12] text-white lg:h-screen lg:overflow-hidden"
@@ -1281,7 +1773,15 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
         <section className="dashboard-stage min-h-0 flex-1 py-3">
           <ActivePanel
             activeMode={activeMode}
+            combinationColumnDimension={combinationColumnDimension}
+            combinationFilterDimension={combinationFilterDimension}
+            combinationFilterValue={combinationFilterValue}
+            combinationRowDimension={combinationRowDimension}
             enrollmentFilter={enrollmentFilter}
+            onCombinationColumnDimensionChange={handleCombinationColumnDimensionChange}
+            onCombinationFilterDimensionChange={handleCombinationFilterDimensionChange}
+            onCombinationFilterValueChange={setCombinationFilterValue}
+            onCombinationRowDimensionChange={handleCombinationRowDimensionChange}
             onEnrollmentFilterChange={setEnrollmentFilter}
             onModeChange={handleModeChange}
             summary={liveSummary}
