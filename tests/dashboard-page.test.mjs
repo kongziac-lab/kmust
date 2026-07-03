@@ -140,7 +140,9 @@ test("overview certification summary renders details and management badges", asy
     "인증지표 요약",
     "summary-certification-card",
     "summary-status-badge",
+    "summary-value-stack",
     "summary-count-ratio",
+    "summary-count-ratio-row",
     "문서 기준: 의료보험 가입률 95% 이상",
     "1,790/2,619명",
     "관리 필요",
@@ -152,6 +154,16 @@ test("overview certification summary renders details and management badges", asy
   }
 
   assert.doesNotMatch(html, /1,790 \/ 2,619명/, "summary ratio counts should avoid wrapping spaces");
+  assert.doesNotMatch(
+    html,
+    /summary-value-row[^>]*justify-between/,
+    "summary value and count should not share a compressed horizontal row",
+  );
+  assert.doesNotMatch(
+    html,
+    /summary-count-ratio[^"]*truncate/,
+    "summary ratio counts should remain fully visible instead of being truncated",
+  );
 });
 
 test("attendance mode renders absence threshold counts and student lists", async () => {

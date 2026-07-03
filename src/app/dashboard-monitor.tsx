@@ -1443,12 +1443,14 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
             </span>
           </div>
 
-          <div className="mt-3 flex items-end justify-between gap-2">
-            <div className="summary-value min-w-0 font-mono text-[clamp(1.75rem,1.45vw,2rem)] font-black leading-none text-white">
+          <div className="summary-value-stack mt-3 grid gap-2">
+            <div className="summary-value min-w-0 font-mono text-[clamp(1.85rem,2.2vw,2.45rem)] font-black leading-none text-white">
               {indicator.value}
             </div>
-            <div className="summary-count-ratio shrink-0 whitespace-nowrap text-right font-mono text-[clamp(0.62rem,0.55vw,0.75rem)] font-black leading-none text-[#47d7c6]">
-              {indicator.count}
+            <div className="summary-count-ratio-row flex min-w-0 items-center justify-end rounded-md bg-black/14 px-2.5 py-1.5">
+              <span className="summary-count-ratio whitespace-nowrap text-right font-mono text-sm font-black leading-none text-[#47d7c6]">
+                {indicator.count}
+              </span>
             </div>
           </div>
 
