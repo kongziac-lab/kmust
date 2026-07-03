@@ -129,8 +129,9 @@ test("overview certification summary renders details and management badges", asy
     "인증지표 요약",
     "summary-certification-card",
     "summary-status-badge",
+    "summary-count-ratio",
     "문서 기준: 의료보험 가입률 95% 이상",
-    "1,790 / 2,619명",
+    "1,790/2,619명",
     "관리 필요",
     "정성 관리",
   ];
@@ -138,6 +139,8 @@ test("overview certification summary renders details and management badges", asy
   for (const text of expectedContent) {
     assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered`);
   }
+
+  assert.doesNotMatch(html, /1,790 \/ 2,619명/, "summary ratio counts should avoid wrapping spaces");
 });
 
 test("attendance mode renders absence threshold counts and student lists", async () => {

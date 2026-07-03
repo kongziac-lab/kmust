@@ -39,6 +39,10 @@ function formatNumber(value: number) {
   return value.toLocaleString("ko-KR");
 }
 
+function formatRatioCount(value: number, total: number) {
+  return `${formatNumber(value)}/${formatNumber(total)}명`;
+}
+
 function formatPercent(value: number) {
   return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
 }
@@ -807,7 +811,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       title: "중도탈락율",
       value: formatPercent(summary.metrics.dropoutRate),
       score: summary.metrics.dropoutRate,
-      count: `${formatNumber(summary.metrics.dropoutStudents)} / ${formatNumber(totalStudents)}명`,
+      count: formatRatioCount(summary.metrics.dropoutStudents, totalStudents),
       criterion: `문서 기준: ${formatPercent(dropoutThreshold)} 미만`,
       formula: "(분자) 중도탈락 학생 수 / (분모) 외국인 재적학생 수",
       evidence: "대학정보공시 4-바-2 외국인 유학생 중도탈락률",
@@ -821,7 +825,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       title: "토픽취득율",
       value: formatPercent(summary.metrics.topikRate),
       score: summary.metrics.topikRate,
-      count: `${formatNumber(summary.metrics.topikStudents)} / ${formatNumber(totalStudents)}명`,
+      count: formatRatioCount(summary.metrics.topikStudents, totalStudents),
       criterion: "문서 기준: TOPIK 등 공인 언어능력 40% 이상",
       formula: "(분자) TOPIK 등 공인 언어능력 충족 학생 수 / (분모) 외국인 유학생 수",
       evidence: "신입생 및 재학생 TOPIK 성적, 입학서류, 졸업요건 증빙",
@@ -835,7 +839,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       title: "보험가입율",
       value: formatPercent(summary.metrics.insuranceCoverageRate),
       score: summary.metrics.insuranceCoverageRate,
-      count: `${formatNumber(summary.metrics.activeInsurance)} / ${formatNumber(totalStudents)}명`,
+      count: formatRatioCount(summary.metrics.activeInsurance, totalStudents),
       criterion: "문서 기준: 의료보험 가입률 95% 이상",
       formula: "(분자) 보험 가입·유효 학생 수 / (분모) 외국인 유학생 수",
       evidence: "외국인 어학연수생이 가입 중인 의료보험 현황",
@@ -849,7 +853,7 @@ function getCertificationIndicators(summary: DashboardSummary): CertificationInd
       title: "상담비율",
       value: formatPercent(summary.metrics.counselingTargetRate),
       score: summary.metrics.counselingTargetRate,
-      count: `${formatNumber(summary.metrics.counselingTargets)} / ${formatNumber(totalStudents)}명`,
+      count: formatRatioCount(summary.metrics.counselingTargets, totalStudents),
       criterion: "문서 기준: 상담(정신건강) 포함 관리 3점 이상",
       formula: "(분자) 상담 우선관리 학생 수 / (분모) 외국인 유학생 수",
       evidence: "만족도 조사 결과보고서, 상담(정신건강) 포함 관리계획",
@@ -896,9 +900,13 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
             </span>
           </div>
 
-          <div className="mt-3 flex items-end justify-between gap-3">
-            <div className="font-mono text-3xl font-black leading-none text-white">{indicator.value}</div>
-            <div className="text-right font-mono text-xs font-black text-[#47d7c6]">{indicator.count}</div>
+          <div className="mt-3 flex items-end justify-between gap-2">
+            <div className="summary-value min-w-0 font-mono text-[clamp(1.75rem,1.45vw,2rem)] font-black leading-none text-white">
+              {indicator.value}
+            </div>
+            <div className="summary-count-ratio shrink-0 whitespace-nowrap text-right font-mono text-[clamp(0.62rem,0.55vw,0.75rem)] font-black leading-none text-[#47d7c6]">
+              {indicator.count}
+            </div>
           </div>
 
           <div className="mt-3 grid gap-2 text-xs font-semibold leading-5 text-[#9eb0bb]">
@@ -950,7 +958,9 @@ function IndicatorCard({
       </div>
       <div className="mt-auto flex items-end justify-between gap-3 pt-3">
         <div className="font-mono text-4xl font-black leading-none text-white">{indicator.value}</div>
-        <div className="font-mono text-sm font-black text-[#47d7c6]">{indicator.count}</div>
+        <div className="shrink-0 whitespace-nowrap font-mono text-sm font-black leading-none text-[#47d7c6]">
+          {indicator.count}
+        </div>
       </div>
       <div className="mt-3 text-xs font-semibold leading-5 text-[#9eb0bb]">{indicator.criterion}</div>
       <div className="indicator-progress mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
