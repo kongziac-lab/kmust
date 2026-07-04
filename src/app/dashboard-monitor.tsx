@@ -562,26 +562,48 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
   const targets = summary.absenceWatchStudents
     .filter((item) => item.absentCount >= 3);
   const rolling = targets.length > limit;
-  const rollDuration = `${Math.max(targets.length * 3.5, 26)}s`;
+  const rollDuration = `${Math.max(targets.length * 2.4, 24)}s`;
 
   function renderTarget(item: (typeof targets)[number], key: string) {
+    const shownCourses = item.courseNames.slice(0, 3);
+    const hiddenCourseCount = Math.max(item.courseNames.length - shownCourses.length, 0);
+    const courseSummary = shownCourses.length
+      ? `${shownCourses.join(", ")}${hiddenCourseCount > 0 ? ` 외 ${hiddenCourseCount}` : ""}`
+      : "미확인";
+    const counts = [
+      ["결석", item.absentCount, "absent"],
+      ["지각", item.lateCount, "late"],
+      ["공결", item.excusedCount, "excused"],
+    ] as const;
+
     return (
       <div
         key={key}
-        className="absence-roll-row grid min-h-0 gap-3 rounded-md border border-white/[0.05] bg-white/[0.055] px-3 py-2.5 sm:grid-cols-[1fr_auto]"
+        className="absence-roll-row absence-compact-row grid min-h-0 items-center gap-1.5 rounded-md border px-2 py-1 sm:grid-cols-[minmax(0,1fr)_auto]"
       >
-        <div className="min-w-0">
-          <div className="truncate text-sm font-black text-white">
-            {item.student.studentNo} · {item.student.department || item.student.program}
+        <div className="absence-row-main grid min-w-0 gap-0.5">
+          <div className="flex min-w-0 items-baseline gap-2">
+            <span className="shrink-0 font-mono text-[12px] font-black leading-none text-white">{item.student.studentNo}</span>
+            <span className="truncate text-[11px] font-black text-[#a9bac4]">{item.student.department || item.student.program}</span>
           </div>
-          <div className="mt-1 truncate text-xs font-semibold text-[#81949e]">
-            결석 과목 {item.courseNames.join(", ") || "미확인"}
+          <div
+            className="absence-course-line truncate text-[10px] font-semibold leading-3 text-[#81949e]"
+            title={`결석 과목 ${item.courseNames.join(", ") || "미확인"}`}
+          >
+            결석 과목 {courseSummary}
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-right">
-          <MiniStat label="결석" value={formatNumber(item.absentCount)} />
-          <MiniStat label="지각" value={formatNumber(item.lateCount)} />
-          <MiniStat label="공결" value={formatNumber(item.excusedCount)} />
+        <div className="absence-counts-inline flex shrink-0 items-center gap-1">
+          {counts.map(([label, value, metric]) => (
+            <span
+              key={metric}
+              className="absence-count-chip inline-flex min-w-10 items-center justify-between gap-1 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-black leading-none"
+              data-absence-metric={metric}
+            >
+              <span className="font-sans text-[9px] font-bold text-[#8da4b0]">{label}</span>
+              <span>{formatNumber(value)}</span>
+            </span>
+          ))}
         </div>
       </div>
     );
@@ -597,16 +619,16 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
 
   return (
     <div
-      className="absence-roll h-full min-h-0 overflow-hidden pr-1"
+      className="absence-roll absence-roll-compact h-full min-h-0 overflow-hidden pr-1"
       aria-label="최근 1주일 출결 관찰 대상 롤링 리스트"
       style={{ "--roll-duration": rollDuration } as CSSProperties}
     >
       <div className="absence-roll-track flex flex-col" data-rolling={rolling ? "true" : "false"}>
-        <div className="grid gap-2">
+        <div className="grid gap-1.5">
           {targets.map((item) => renderTarget(item, item.student.studentNo))}
         </div>
         {rolling ? (
-          <div className="grid gap-2" aria-hidden="true">
+          <div className="grid gap-1.5" aria-hidden="true">
             {targets.map((item) => renderTarget(item, `repeat-${item.student.studentNo}`))}
           </div>
         ) : null}

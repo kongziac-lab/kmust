@@ -264,6 +264,34 @@ test("attendance mode renders absence threshold counts and student lists", async
   }
 });
 
+test("attendance observation list uses compact rows for dense monitoring", async () => {
+  const response = await getHtml(`${baseUrl}/?mode=attendance`);
+  assert.equal(response.status, 200);
+
+  const html = response.body;
+  const expectedContent = [
+    "absence-roll-compact",
+    "absence-compact-row",
+    "absence-row-main",
+    "absence-course-line",
+    "absence-counts-inline",
+    "absence-count-chip",
+    "data-absence-metric=\"absent\"",
+    "data-absence-metric=\"late\"",
+    "data-absence-metric=\"excused\"",
+  ];
+
+  for (const text of expectedContent) {
+    assert.match(html, new RegExp(escapeRegExp(text)), `${text} should be rendered`);
+  }
+
+  assert.doesNotMatch(
+    html,
+    /absence-roll-row[^"]*sm:grid-cols-\[1fr_auto\]/,
+    "observation rows should not use the old tall card layout",
+  );
+});
+
 test("dashboard summary harness observer has no failed runs", async () => {
   const response = await getHtml(`${baseUrl}/api/dashboard/summary`);
   assert.equal(response.status, 200);
