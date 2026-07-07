@@ -8,6 +8,13 @@ type DistributionItem = {
   value: number;
 };
 
+const statTones: Record<string, string> = {
+  violet: "linear-gradient(90deg,#a855f7,#d946ef)",
+  teal: "linear-gradient(90deg,#06b6d4,#22d3ee)",
+  green: "linear-gradient(90deg,#22c55e,#06b6d4)",
+  amber: "linear-gradient(90deg,#f97316,#eab308)",
+};
+
 function countBy<T>(items: T[], getKey: (item: T) => string | number | null | undefined) {
   const counts = new Map<string, number>();
 
@@ -43,12 +50,26 @@ function buildGpaDistribution() {
   }));
 }
 
-function StatCard({ title, value, caption }: { title: string; value: string | number; caption: string }) {
+function StatCard({
+  title,
+  value,
+  caption,
+  tone = "teal",
+}: {
+  title: string;
+  value: string | number;
+  caption: string;
+  tone?: keyof typeof statTones | string;
+}) {
   return (
-    <article className="rounded-xl bg-gradient-to-br from-[#30206b] to-[#211452] p-5 shadow-[0_24px_70px_-42px_rgba(0,0,0,0.9)] ring-1 ring-white/10">
-      <div className="text-sm text-[#9aa6d6]">{title}</div>
+    <article className="relative overflow-hidden rounded-xl border border-[#23232f] bg-[#14141c] p-5">
+      <div
+        className="absolute inset-x-0 top-0 h-[3px]"
+        style={{ background: statTones[tone] || statTones.teal }}
+      />
+      <div className="text-sm font-semibold text-[#9a9fb5]">{title}</div>
       <div className="mt-3 font-mono text-3xl font-black text-white">{value}</div>
-      <div className="mt-3 break-keep-all text-xs leading-5 text-[#c9d1ff]">{caption}</div>
+      <div className="mt-3 break-keep-all text-xs leading-5 text-[#71768c]">{caption}</div>
     </article>
   );
 }
@@ -69,13 +90,13 @@ function ChartPanel({
   const total = items.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <section className="rounded-xl bg-[#211452] p-5 ring-1 ring-white/10">
+    <section className="rounded-xl border border-[#23232f] bg-[#14141c] p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black">{title}</h2>
-          <p className="mt-2 break-keep-all text-sm leading-6 text-[#9aa6d6]">{description}</p>
+          <h2 className="text-xl font-black text-[#eef2f8]">{title}</h2>
+          <p className="mt-2 break-keep-all text-sm leading-6 text-[#9a9fb5]">{description}</p>
         </div>
-        <span className="rounded-full bg-white/8 px-3 py-1 font-mono text-xs text-[#79e1ed]">
+        <span className="rounded-full border border-[#2b2b39] bg-[#1b1b25] px-3 py-1 font-mono text-xs text-[#22d3ee]">
           {total.toLocaleString("ko-KR")}
         </span>
       </div>
@@ -83,12 +104,12 @@ function ChartPanel({
         {shown.map((item) => (
           <div key={item.name}>
             <div className="flex items-center justify-between gap-4 text-sm">
-              <span className="truncate text-[#dfe5ff]">{item.name}</span>
-              <span className="font-mono text-[#79e1ed]">{item.value.toLocaleString("ko-KR")}</span>
+              <span className="truncate text-[#d7dcee]">{item.name}</span>
+              <span className="font-mono text-[#22d3ee]">{item.value.toLocaleString("ko-KR")}</span>
             </div>
-            <div className="mt-2 h-3 overflow-hidden rounded-full bg-white/8">
+            <div className="mt-2 h-3 overflow-hidden rounded-full bg-[#22222e]">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#6f65ff] via-[#38bed0] to-[#d843b4]"
+                className="led-fill h-full rounded-full"
                 style={{ width: `${Math.max((item.value / max) * 100, 3)}%` }}
               />
             </div>
@@ -103,25 +124,25 @@ function DataTable({ title, items }: { title: string; items: DistributionItem[] 
   const total = items.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <section className="overflow-hidden rounded-xl bg-[#211452] ring-1 ring-white/10">
-      <div className="border-b border-white/10 px-5 py-4">
-        <h2 className="text-lg font-black">{title}</h2>
+    <section className="overflow-hidden rounded-xl border border-[#23232f] bg-[#14141c]">
+      <div className="border-b border-[#23232f] px-5 py-4">
+        <h2 className="text-lg font-black text-[#eef2f8]">{title}</h2>
       </div>
       <div className="max-h-[480px] overflow-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
-          <thead className="sticky top-0 bg-[#211452] text-xs uppercase tracking-[0.12em] text-[#9aa6d6]">
+          <thead className="sticky top-0 bg-[#1b1b25] text-xs uppercase tracking-[0.12em] text-[#9a9fb5]">
             <tr>
               <th className="px-5 py-3">구분</th>
               <th className="px-5 py-3">학생 수</th>
               <th className="px-5 py-3">비율</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/8">
+          <tbody className="divide-y divide-[#23232f]">
             {items.map((item) => (
-              <tr key={item.name} className="transition-smooth hover:bg-white/5">
-                <td className="px-5 py-3 text-[#dfe5ff]">{item.name}</td>
-                <td className="px-5 py-3 font-mono text-[#79e1ed]">{item.value.toLocaleString("ko-KR")}</td>
-                <td className="px-5 py-3 font-mono text-[#c9d1ff]">
+              <tr key={item.name} className="transition-smooth hover:bg-white/[0.04]">
+                <td className="px-5 py-3 text-[#d7dcee]">{item.name}</td>
+                <td className="px-5 py-3 font-mono text-[#22d3ee]">{item.value.toLocaleString("ko-KR")}</td>
+                <td className="px-5 py-3 font-mono text-[#9a9fb5]">
                   {total === 0 ? "0.0" : ((item.value / total) * 100).toFixed(1)}%
                 </td>
               </tr>
@@ -146,36 +167,34 @@ export default function AnalyticsPage() {
     validGpaStudents.reduce((sum, student) => sum + (student.gpa || 0), 0) / Math.max(validGpaStudents.length, 1);
 
   return (
-    <main className="min-h-screen bg-[#120836] px-4 py-6 text-white md:px-8">
-      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_82%_12%,rgba(214,46,179,0.22),transparent_30%),radial-gradient(circle_at_12%_82%,rgba(60,190,208,0.18),transparent_28%),linear-gradient(135deg,#180d48,#080624)]" />
-      <div className="noise-layer" />
+    <main className="min-h-screen bg-[#0a0a0e] px-4 py-6 text-white md:px-8">
       <div className="mx-auto max-w-7xl">
-        <header className="flex flex-col gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end md:justify-between">
+        <header className="flex flex-col gap-4 border-b border-[#23232f] pb-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <Link href="/" className="text-sm font-semibold text-[#79e1ed] transition-smooth hover:text-white">
+            <Link href="/" className="text-sm font-semibold text-[#22d3ee] transition-smooth hover:text-white">
               Dashboard
             </Link>
-            <h1 className="mt-3 text-4xl font-black tracking-tight">학생 현황 분석</h1>
-            <p className="mt-3 break-keep-all text-[#c9d1ff]">
+            <h1 className="mt-3 text-4xl font-black tracking-tight text-[#f5f6ff]">학생 현황 분석</h1>
+            <p className="mt-3 break-keep-all text-[#9a9fb5]">
               국가, 학년, 전공, 성적분포를 기준으로 외국인학생 구성을 살펴봅니다.
             </p>
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/8 px-4 py-2 text-xs font-semibold text-[#c9d1ff] ring-1 ring-white/10">
-              <span className="h-2 w-2 rounded-full bg-[#77e4e6]" />
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#2b2b39] bg-[#14141c] px-4 py-2 text-xs font-semibold text-[#9a9fb5]">
+              <span className="h-2 w-2 rounded-full bg-[#22d3ee]" />
               {dataSource.label} · {dataSource.recordCount.toLocaleString("ko-KR")}명
               {dataSource.importedAt ? ` · ${dataSource.importedAt}` : ""}
             </div>
           </div>
-          <div className="rounded-xl bg-[#211452] px-5 py-4 text-right ring-1 ring-white/10">
-            <div className="text-sm text-[#9aa6d6]">분석 기준 학생</div>
-            <div className="font-mono text-3xl font-black text-[#79e1ed]">{students.length.toLocaleString("ko-KR")}</div>
+          <div className="rounded-xl border border-[#23232f] bg-[#14141c] px-5 py-4 text-right">
+            <div className="text-sm text-[#9a9fb5]">분석 기준 학생</div>
+            <div className="font-mono text-3xl font-black text-[#22d3ee]">{students.length.toLocaleString("ko-KR")}</div>
           </div>
         </header>
 
         <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="국가 수" value={nationalities.length} caption="국적 정보 기준 고유 국가" />
-          <StatCard title="전공 수" value={departments.length} caption="학과·전공명 기준 고유 전공" />
-          <StatCard title="평균 평점" value={averageGpa.toFixed(2)} caption="4.5 평점 범위만 집계" />
-          <StatCard title="최다 국가" value={nationalities[0]?.name || "-"} caption={`${nationalities[0]?.value.toLocaleString("ko-KR") || 0}명`} />
+          <StatCard title="국가 수" value={nationalities.length} caption="국적 정보 기준 고유 국가" tone="violet" />
+          <StatCard title="전공 수" value={departments.length} caption="학과·전공명 기준 고유 전공" tone="teal" />
+          <StatCard title="평균 평점" value={averageGpa.toFixed(2)} caption="4.5 평점 범위만 집계" tone="green" />
+          <StatCard title="최다 국가" value={nationalities[0]?.name || "-"} caption={`${nationalities[0]?.value.toLocaleString("ko-KR") || 0}명`} tone="amber" />
         </section>
 
         <section className="mt-6 grid gap-5 xl:grid-cols-2">

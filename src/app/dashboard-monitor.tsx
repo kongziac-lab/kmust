@@ -319,21 +319,16 @@ function MetricTile({
   title: string;
   value: string;
   caption: string;
-  tone?: "teal" | "blue" | "amber" | "red" | "green";
+  tone?: "violet" | "teal" | "blue" | "amber" | "red" | "green";
 }) {
-  const tones = {
-    teal: "border-[#24b8ff]/45 bg-[#061b29]/88",
-    blue: "border-[#2f8cff]/45 bg-[#061527]/88",
-    amber: "border-[#e9c85c]/45 bg-[#211c0b]/88",
-    red: "border-[#ff4b6d]/45 bg-[#251019]/88",
-    green: "border-[#4edc96]/45 bg-[#082117]/88",
-  };
-
   return (
-    <section className={`metric-tile flex h-full min-h-0 flex-col rounded-lg border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${tones[tone]}`}>
-      <div className="text-sm font-bold text-[#9db6c7]">{title}</div>
+    <section
+      data-tone={tone}
+      className="metric-tile flex h-full min-h-0 flex-col rounded-lg border p-4"
+    >
+      <div className="text-sm font-bold text-[#9a9fb5]">{title}</div>
       <div className="metric-value mt-auto pt-4 font-mono text-4xl font-black leading-none xl:text-5xl">{value}</div>
-      <div className="mt-4 text-xs font-medium leading-5 text-[#7f939f]">{caption}</div>
+      <div className="mt-4 text-xs font-medium leading-5 text-[#71768c]">{caption}</div>
     </section>
   );
 }
@@ -373,13 +368,13 @@ function Gauge({ value, label }: { value: number; label: string }) {
   return (
     <div className="grid place-items-center">
       <div
-        className="grid aspect-square w-full max-w-56 place-items-center rounded-full bg-[conic-gradient(#21b7ff_0deg,#21b7ff_calc(var(--score)*3.6deg),rgba(20,76,118,0.42)_0deg)] p-4 shadow-[0_0_42px_rgba(33,183,255,0.2)]"
+        className="grid aspect-square w-full max-w-56 place-items-center rounded-full bg-[conic-gradient(#22d3ee_0deg,#22d3ee_calc(var(--score)*3.6deg),#22222e_0deg)] p-4"
         style={{ "--score": value } as CSSProperties}
       >
-        <div className="grid h-full w-full place-items-center rounded-full border border-[#1686cf]/26 bg-[#020b15] text-center shadow-[inset_0_0_24px_rgba(33,183,255,0.08)]">
+        <div className="grid h-full w-full place-items-center rounded-full border border-[#2b2b39] bg-[#14141c] text-center">
           <div>
-            <div className="text-sm font-bold text-[#7f939f]">{label}</div>
-            <div className="mt-2 font-mono text-4xl font-black text-[#24b8ff]">{formatPercent(value)}</div>
+            <div className="text-sm font-bold text-[#71768c]">{label}</div>
+            <div className="mt-2 font-mono text-4xl font-black text-[#22d3ee]">{formatPercent(value)}</div>
           </div>
         </div>
       </div>
@@ -547,7 +542,7 @@ function ProgressRows({
             </div>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/8">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#21b7ff] via-[#38e6ff] to-[#e8c46a]"
+                className="led-fill h-full rounded-full"
                 style={{ width: `${Math.max((item.value / max) * 100, 3)}%` }}
               />
             </div>
@@ -671,6 +666,7 @@ function Overview({ onModeChange, summary }: { onModeChange: ModeChangeHandler; 
             title="전체 학생"
             value={formatNumber(summary.metrics.totalStudents)}
             caption={`${summary.dataSource.label} · ${formatNumber(summary.dataSource.recordCount)}명`}
+            tone="violet"
           />
           <MetricTile
             title="재학생"
@@ -936,7 +932,7 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
               <div className="truncate text-sm font-black text-white">{item.name}</div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#21b7ff] via-[#38e6ff] to-[#e8c46a]"
+                  className="led-fill h-full rounded-full"
                   style={{ width: `${Math.max((item.value / max) * 100, 3)}%` }}
                 />
               </div>
@@ -1160,7 +1156,7 @@ function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationR
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#21b7ff] via-[#38e6ff] to-[#e8c46a]"
+                        className="led-fill h-full rounded-full"
                         style={{ width: `${Math.max(segmentPercent, 3)}%` }}
                       />
                     </div>
