@@ -342,6 +342,57 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
+function EmptyState({
+  hint,
+  title,
+  tone = "muted",
+}: {
+  hint?: string;
+  title: string;
+  tone?: "muted" | "ok";
+}) {
+  return (
+    <div
+      data-empty-tone={tone}
+      className="empty-state grid h-full min-h-20 place-items-center px-4 py-6 text-center"
+    >
+      <div>
+        {tone === "ok" ? (
+          <svg
+            className="empty-state-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12 2.5 2.5 4.5-5" />
+          </svg>
+        ) : (
+          <svg
+            className="empty-state-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M8.5 12h7" />
+          </svg>
+        )}
+        <div className="empty-state-title">{title}</div>
+        {hint ? <div className="empty-state-hint">{hint}</div> : null}
+      </div>
+    </div>
+  );
+}
+
 function Panel({
   children,
   title,
@@ -478,9 +529,15 @@ function OverviewAttendanceLine({
       </div>
       <div className="overview-attendance-breakdown grid min-w-0 grid-cols-4 gap-2">
         {items.map(([label, value, tone]) => (
-          <div key={label} className={`attendance-metric-pill attendance-metric-${tone} min-w-0 rounded-md px-2.5 py-2`}>
-            <div className="truncate text-[11px] font-bold text-[#9fb5c0]">{label}</div>
-            <div className="mt-1 font-mono text-base font-black leading-none text-white">{formatNumber(value)}</div>
+          <div
+            key={label}
+            className={`attendance-metric-pill attendance-metric-${tone} grid min-w-0 content-center rounded-md px-2.5 py-2`}
+          >
+            <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-bold text-[#9fb5c0]">
+              <span className="attendance-dot shrink-0" aria-hidden="true" />
+              <span className="truncate">{label}</span>
+            </div>
+            <div className="mt-1.5 font-mono text-base font-black leading-none text-white">{formatNumber(value)}</div>
           </div>
         ))}
       </div>
@@ -606,9 +663,11 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
 
   if (targets.length === 0) {
     return (
-      <div className="rounded-md border border-white/[0.06] bg-white/[0.055] p-4 text-sm font-semibold text-[#9eb0bb]">
-        최근 1주일 기준 출결 관찰 대상 없음
-      </div>
+      <EmptyState
+        hint="최근 1주일 기준 결석 3과목 이상 학생이 없습니다."
+        title="관찰 대상 없음"
+        tone="ok"
+      />
     );
   }
 
@@ -661,7 +720,7 @@ function Overview({ onModeChange, summary }: { onModeChange: ModeChangeHandler; 
   return (
     <div className="monitor-grid grid h-full min-h-0 gap-3 xl:grid-cols-[1.1fr_0.9fr]">
       <div className="overview-left-column grid h-full min-h-0 gap-3 xl:grid-rows-[1fr_1fr]">
-        <div className="grid h-full min-h-0 auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid h-full min-h-0 auto-rows-fr gap-3 grid-cols-2 xl:grid-cols-3">
           <MetricTile
             title="전체 학생"
             value={formatNumber(summary.metrics.totalStudents)}
@@ -701,7 +760,7 @@ function Overview({ onModeChange, summary }: { onModeChange: ModeChangeHandler; 
         </div>
 
         <Panel title="현황 주요 분포">
-          <div className="grid gap-5 lg:grid-cols-3">
+          <div className="distribution-grid grid gap-5 lg:grid-cols-3">
             <ProgressRows items={summary.distributions.program} limit={5} />
             <ProgressRows items={summary.distributions.nationality} limit={5} />
             <ProgressRows items={summary.distributions.gender} limit={5} />
@@ -911,9 +970,7 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
 
   if (shown.length === 0) {
     return (
-      <div className="grid h-full place-items-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.035] text-sm font-bold text-[#8fa2ad]">
-        대상 없음
-      </div>
+      <EmptyState hint="선택한 조건의 결과가 없습니다." title="대상 없음" />
     );
   }
 
@@ -1117,9 +1174,7 @@ function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationR
 
   if (shown.length === 0) {
     return (
-      <div className="grid h-full place-items-center rounded-md border border-dashed border-white/[0.08] bg-white/[0.035] text-sm font-bold text-[#8fa2ad]">
-        대상 없음
-      </div>
+      <EmptyState hint="선택한 조건의 결과가 없습니다." title="대상 없음" />
     );
   }
 
@@ -1479,6 +1534,7 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
       {indicators.map((indicator) => (
         <section
           key={indicator.mode}
+          data-status={indicator.status}
           className={`summary-certification-card flex h-full min-h-0 flex-col rounded-lg border p-3.5 ${
             indicator.status === "관리 필요"
               ? "border-[#f07188]/45 bg-[#251018]"
@@ -1507,7 +1563,7 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
             </div>
           </div>
 
-          <div className="mt-3 grid gap-2 text-xs font-semibold leading-5 text-[#9eb0bb]">
+          <div className="mt-auto grid gap-2 pt-3 text-xs font-semibold leading-5 text-[#9eb0bb]">
             <div>{indicator.criterion}</div>
             <div className="rounded-md bg-black/16 px-2 py-1.5 text-[#c4d2d9]">{indicator.note}</div>
           </div>
@@ -1811,7 +1867,7 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
                 외국인학생 현황 대시보드
               </h1>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-right sm:flex sm:items-end sm:justify-end">
+            <div className="header-meta grid grid-cols-3 gap-2 text-right sm:flex sm:items-end sm:justify-end">
               <MiniStat label="모드" value={getModeTitle(activeMode)} />
               <MiniStat label="자료" value={liveSummary.dataSource.type === "sqlite" ? "DB" : "SEED"} />
               <MiniStat label="갱신" value={generatedAt} />
