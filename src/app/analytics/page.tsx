@@ -68,7 +68,7 @@ function StatCard({
         style={{ background: statTones[tone] || statTones.teal }}
       />
       <div className="text-sm font-semibold text-[#9a9fb5]">{title}</div>
-      <div className="mt-3 font-mono text-3xl font-black text-white">{value}</div>
+      <div className="mt-3 font-mono text-3xl font-bold text-white">{value}</div>
       <div className="mt-3 break-keep-all text-xs leading-5 text-[#71768c]">{caption}</div>
     </article>
   );
@@ -93,7 +93,7 @@ function ChartPanel({
     <section className="rounded-xl border border-[#23232f] bg-[#14141c] p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-black text-[#eef2f8]">{title}</h2>
+          <h2 className="text-xl font-bold text-[#eef2f8]">{title}</h2>
           <p className="mt-2 break-keep-all text-sm leading-6 text-[#9a9fb5]">{description}</p>
         </div>
         <span className="rounded-full border border-[#2b2b39] bg-[#1b1b25] px-3 py-1 font-mono text-xs text-[#22d3ee]">
@@ -126,7 +126,7 @@ function DataTable({ title, items }: { title: string; items: DistributionItem[] 
   return (
     <section className="overflow-hidden rounded-xl border border-[#23232f] bg-[#14141c]">
       <div className="border-b border-[#23232f] px-5 py-4">
-        <h2 className="text-lg font-black text-[#eef2f8]">{title}</h2>
+        <h2 className="text-lg font-bold text-[#eef2f8]">{title}</h2>
       </div>
       <div className="max-h-[480px] overflow-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
@@ -174,7 +174,7 @@ export default function AnalyticsPage() {
             <Link href="/" className="text-sm font-semibold text-[#22d3ee] transition-smooth hover:text-white">
               Dashboard
             </Link>
-            <h1 className="mt-3 text-4xl font-black tracking-tight text-[#f5f6ff]">학생 현황 분석</h1>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-[#f5f6ff]">학생 현황 분석</h1>
             <p className="mt-3 break-keep-all text-[#9a9fb5]">
               국가, 학년, 전공, 성적분포를 기준으로 외국인학생 구성을 살펴봅니다.
             </p>
@@ -186,7 +186,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="rounded-xl border border-[#23232f] bg-[#14141c] px-5 py-4 text-right">
             <div className="text-sm text-[#9a9fb5]">분석 기준 학생</div>
-            <div className="font-mono text-3xl font-black text-[#22d3ee]">{students.length.toLocaleString("ko-KR")}</div>
+            <div className="font-mono text-3xl font-bold text-[#22d3ee]">{students.length.toLocaleString("ko-KR")}</div>
           </div>
         </header>
 

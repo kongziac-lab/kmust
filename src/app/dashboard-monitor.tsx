@@ -295,7 +295,7 @@ function ModeGroup({
 }) {
   return (
     <div className="mode-group flex min-w-0 items-center gap-2" data-mode-group={tone}>
-      <div className={`mode-group-badge mode-group-badge-${tone} shrink-0 text-xs font-black`}>
+      <div className={`mode-group-badge mode-group-badge-${tone} shrink-0 text-xs font-bold`}>
         {title}
       </div>
       <div className="mode-scroll flex min-w-0 gap-2 overflow-x-auto pb-1">
@@ -330,7 +330,7 @@ function MetricTile({
       className="metric-tile flex h-full min-h-0 flex-col rounded-lg border p-4"
     >
       <div className="text-sm font-bold text-[#9a9fb5]">{title}</div>
-      <div className="metric-value mt-auto pt-4 font-mono text-4xl font-black leading-none xl:text-5xl">{value}</div>
+      <div className="metric-value mt-auto pt-4 font-mono text-4xl font-bold leading-none xl:text-5xl">{value}</div>
       <div className="mt-4 text-xs font-medium leading-5 text-[#71768c]">{caption}</div>
     </section>
   );
@@ -351,7 +351,7 @@ function MiniStat({
       className="tech-stat rounded-md border border-[#167fc9]/24 bg-[#081827]/78 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
     >
       <div className="text-xs font-semibold text-[#7f949f]">{label}</div>
-      <div className="mt-1.5 font-mono text-lg font-black leading-none text-white">{value}</div>
+      <div className="mt-1.5 font-mono text-lg font-bold leading-none text-white">{value}</div>
       {status === "stale" ? (
         <div
           role="status"
@@ -430,7 +430,7 @@ function Panel({
   return (
     <section className={`monitor-panel flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-[#176fae]/38 bg-[#061321]/88 p-4 ${className}`}>
       <div className="flex items-start justify-between gap-4">
-        <h2 className="electric-panel-title text-lg font-black">{title}</h2>
+        <h2 className="electric-panel-title text-lg font-bold">{title}</h2>
         {action}
       </div>
       <div className="mt-3 min-h-0 flex-1 overflow-hidden">{children}</div>
@@ -448,7 +448,7 @@ function Gauge({ value, label }: { value: number; label: string }) {
         <div className="grid h-full w-full place-items-center rounded-full border border-[#2b2b39] bg-[#14141c] text-center">
           <div>
             <div className="text-sm font-bold text-[#71768c]">{label}</div>
-            <div className="mt-2 font-mono text-4xl font-black text-[#22d3ee]">{formatPercent(value)}</div>
+            <div className="mt-2 font-mono text-4xl font-bold text-[#22d3ee]">{formatPercent(value)}</div>
           </div>
         </div>
       </div>
@@ -484,8 +484,8 @@ function CompactAttendanceLine({
     <div className="rounded-md bg-white/6 p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs font-black text-[#81949e]">{title}</div>
-          <div className="mt-1 font-mono text-3xl font-black leading-none text-white">{formatPercent(rate)}</div>
+          <div className="text-xs font-bold text-[#81949e]">{title}</div>
+          <div className="mt-1 font-mono text-3xl font-bold leading-none text-white">{formatPercent(rate)}</div>
         </div>
         <div className="shrink-0 text-right text-xs font-semibold leading-5 text-[#7f939f]">
           {formatNumber(total)}건
@@ -495,7 +495,7 @@ function CompactAttendanceLine({
         {items.map(([label, value]) => (
           <div key={label} className="min-w-0 rounded-md bg-black/18 px-2 py-2">
             <div className="truncate text-[11px] font-semibold text-[#81949e]">{label}</div>
-            <div className="mt-1 font-mono text-lg font-black leading-none text-white">{formatNumber(value)}</div>
+            <div className="mt-1 font-mono text-lg font-bold leading-none text-white">{formatNumber(value)}</div>
           </div>
         ))}
       </div>
@@ -537,16 +537,16 @@ function OverviewAttendanceLine({
       <div className="overview-attendance-main min-w-0">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="truncate text-xs font-black text-[#bfd4df]">{title}</div>
+            <div className="truncate text-xs font-bold text-[#bfd4df]">{title}</div>
             <div className="mt-1 flex min-w-0 items-center gap-2">
-              <span className="attendance-rate-chip shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black">
+              <span className="attendance-rate-chip shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold">
                 {chipLabel}
               </span>
               <span className="truncate font-mono text-xs font-bold text-[#8aa8bb]">{formatNumber(total)}건</span>
             </div>
           </div>
         </div>
-        <div className="overview-attendance-rate mt-2 font-mono text-3xl font-black leading-none text-white">
+        <div className="overview-attendance-rate mt-2 font-mono text-3xl font-bold leading-none text-white">
           {formatPercent(rate)}
         </div>
       </div>
@@ -560,7 +560,7 @@ function OverviewAttendanceLine({
               <span className="attendance-dot shrink-0" aria-hidden="true" />
               <span className="truncate">{label}</span>
             </div>
-            <div className="mt-1.5 font-mono text-base font-black leading-none text-white">{formatNumber(value)}</div>
+            <div className="mt-1.5 font-mono text-base font-bold leading-none text-white">{formatNumber(value)}</div>
           </div>
         ))}
       </div>
@@ -620,7 +620,7 @@ function ProgressRows({
           <div key={item.name}>
             <div className="flex items-center justify-between gap-4 text-sm">
               <span className="truncate font-semibold text-[#dce8ed]">{item.name}</span>
-              <span className="shrink-0 font-mono text-[#24b8ff]">
+              <span className="shrink-0 font-mono font-semibold text-[#24b8ff]">
                 {formatNumber(item.value)}
                 {showPercent ? ` · ${percent.toFixed(1)}%` : ""}
               </span>
@@ -663,11 +663,11 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
       >
         <div className="absence-row-main grid min-w-0 gap-0.5">
           <div className="flex min-w-0 items-baseline gap-2">
-            <span className="shrink-0 font-mono text-[12px] font-black leading-none text-white">{item.student.studentNo}</span>
-            <span className="truncate text-[11px] font-black text-[#a9bac4]">{item.student.department || item.student.program}</span>
+            <span className="shrink-0 font-mono text-xs font-bold leading-none text-white">{item.student.studentNo}</span>
+            <span className="truncate text-[11px] font-semibold text-[#a9bac4]">{item.student.department || item.student.program}</span>
           </div>
           <div
-            className="absence-course-line truncate text-[10px] font-semibold leading-3 text-[#81949e]"
+            className="absence-course-line truncate text-[11px] font-medium leading-tight text-[#81949e]"
             title={`결석 과목 ${item.courseNames.join(", ") || "미확인"}`}
           >
             결석 과목 {courseSummary}
@@ -677,10 +677,10 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
           {counts.map(([label, value, metric]) => (
             <span
               key={metric}
-              className="absence-count-chip inline-flex min-w-10 items-center justify-between gap-1 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-black leading-none"
+              className="absence-count-chip inline-flex min-w-10 items-center justify-between gap-1 rounded-md px-1.5 py-0.5 font-mono text-[11px] font-bold leading-none"
               data-absence-metric={metric}
             >
-              <span className="font-sans text-[9px] font-bold text-[#8da4b0]">{label}</span>
+              <span className="font-sans text-[11px] font-medium text-[#8da4b0]">{label}</span>
               <span>{formatNumber(value)}</span>
             </span>
           ))}
@@ -739,7 +739,7 @@ function RecentClasses({ summary, limit = 6 }: { summary: DashboardSummary; limi
               {session.courseCode} · {session.room}
             </div>
           </div>
-          <div className="shrink-0 font-mono text-xs text-[#24b8ff]">
+          <div className="shrink-0 font-mono text-xs font-semibold text-[#24b8ff]">
             {formatSeoulTime(session.scheduledAt)}
           </div>
         </div>
@@ -813,7 +813,7 @@ function Overview({ onModeChange, summary }: { onModeChange: ModeChangeHandler; 
               data-mode-control="true"
               data-mode="attendance"
               onClick={() => onModeChange("attendance")}
-              className="attendance-deep-link rounded-md px-3 py-2 text-xs font-black transition-smooth"
+              className="attendance-deep-link rounded-md px-3 py-2 text-xs font-bold transition-smooth"
             >
               출결상황
             </button>
@@ -955,7 +955,7 @@ function EnrollmentStatusToggle({
   return (
     <div className="status-filter-bar flex min-h-0 items-center justify-between gap-3 rounded-lg border border-white/[0.08] bg-[#0b151b]/92 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
       <div className="min-w-0">
-        <div className="text-base font-black text-white">재적현황</div>
+        <div className="text-base font-bold text-white">재적현황</div>
         <div className="mt-1 font-mono text-xs font-bold text-[#7f939f]">
           {formatNumber(getEnrollmentFilterTotal(summary, activeFilter))}명
         </div>
@@ -972,12 +972,12 @@ function EnrollmentStatusToggle({
               data-enrollment-filter-control="true"
               data-enrollment-filter={item.value}
               onClick={() => onFilterChange(item.value)}
-              className={`min-w-20 rounded px-3 py-2 text-xs font-black transition-smooth ${
+              className={`min-w-20 rounded px-3 py-2 text-xs font-bold transition-smooth ${
                 active ? "bg-[#21b7ff] text-[#02111d]" : "text-[#a8bbc6] hover:bg-white/8 hover:text-white"
               }`}
             >
               <span>{item.label}</span>
-              <span className="ml-2 font-mono">{formatNumber(getEnrollmentFilterTotal(summary, item.value))}</span>
+              <span className="ml-2 font-mono font-semibold">{formatNumber(getEnrollmentFilterTotal(summary, item.value))}</span>
             </button>
           );
         })}
@@ -1018,9 +1018,9 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
             key={item.name}
             className="status-detail-row grid gap-3 rounded-md border border-white/[0.05] bg-white/[0.045] px-3 py-2.5 sm:grid-cols-[auto_1fr_auto]"
           >
-            <div className="font-mono text-xs font-black text-[#24b8ff]">{String(index + 1).padStart(2, "0")}</div>
+            <div className="font-mono text-xs font-bold text-[#24b8ff]">{String(index + 1).padStart(2, "0")}</div>
             <div className="min-w-0">
-              <div className="truncate text-sm font-black text-white">{item.name}</div>
+              <div className="truncate text-sm font-bold text-white">{item.name}</div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
                 <div
                   className="led-fill h-full rounded-full"
@@ -1028,7 +1028,7 @@ function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: 
                 />
               </div>
             </div>
-            <div className="text-right font-mono text-sm font-black text-[#24b8ff]">
+            <div className="text-right font-mono text-sm font-bold text-[#24b8ff]">
               {formatNumber(item.value)}
               <div className="mt-1 text-xs text-[#81949e]">{percent.toFixed(1)}%</div>
             </div>
@@ -1056,7 +1056,7 @@ function DimensionButton({
       aria-pressed={active}
       disabled={disabled}
       onClick={onClick}
-      className={`min-w-14 rounded px-2.5 py-2 text-xs font-black transition-smooth ${
+      className={`min-w-14 rounded px-2.5 py-2 text-xs font-bold transition-smooth ${
         active
           ? "bg-[#21b7ff] text-[#02111d]"
           : "bg-white/[0.055] text-[#a9bac4] ring-1 ring-white/[0.06] hover:bg-white/[0.09] hover:text-white"
@@ -1080,7 +1080,7 @@ function StatusDimensionControl({
 }) {
   return (
     <div className="min-w-0">
-      <div className="mb-2 text-[11px] font-black text-[#718691]">{label}</div>
+      <div className="mb-2 text-[11px] font-bold text-[#718691]">{label}</div>
       <div className="grid grid-cols-4 gap-1" role="group" aria-label={label}>
         {statusDimensionOptions.map((item) => (
           <DimensionButton
@@ -1105,7 +1105,7 @@ function StatusFilterDimensionControl({
 }) {
   return (
     <div className="min-w-0">
-      <div className="mb-2 text-[11px] font-black text-[#718691]">필터 기준</div>
+      <div className="mb-2 text-[11px] font-bold text-[#718691]">필터 기준</div>
       <div className="grid grid-cols-5 gap-1" role="group" aria-label="필터 기준">
         {statusFilterOptions.map((item) => (
           <DimensionButton
@@ -1136,12 +1136,12 @@ function StatusFilterValueControl({
 
   return (
     <label className="min-w-0">
-      <div className="mb-2 text-[11px] font-black text-[#718691]">필터 값</div>
+      <div className="mb-2 text-[11px] font-bold text-[#718691]">필터 값</div>
       <select
         value={effectiveValue}
         disabled={filterDimension === "all" || filterValues.length === 0}
         onChange={(event) => onFilterValueChange(event.target.value)}
-        className="h-9 w-full rounded-md border border-white/[0.08] bg-white/[0.055] px-3 text-xs font-black text-[#dce8ed] outline-none transition-smooth focus:border-[#24b8ff]/65 disabled:opacity-55"
+        className="h-9 w-full rounded-md border border-white/[0.08] bg-white/[0.055] px-3 text-xs font-bold text-[#dce8ed] outline-none transition-smooth focus:border-[#24b8ff]/65 disabled:opacity-55"
       >
         {filterDimension === "all" ? (
           <option value="">전체</option>
@@ -1223,12 +1223,12 @@ function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationR
             className="status-detail-row rounded-md border border-white/[0.05] bg-white/[0.045] px-3 py-2.5"
           >
             <div className="grid items-start gap-3 sm:grid-cols-[auto_1fr_auto]">
-              <div className="font-mono text-xs font-black text-[#24b8ff]">{String(index + 1).padStart(2, "0")}</div>
+              <div className="font-mono text-xs font-bold text-[#24b8ff]">{String(index + 1).padStart(2, "0")}</div>
               <div className="min-w-0">
-                <div className="truncate text-sm font-black text-white">{row.name}</div>
+                <div className="truncate text-sm font-bold text-white">{row.name}</div>
                 <div className="mt-1 font-mono text-xs font-bold text-[#81949e]">{rowPercent.toFixed(1)}%</div>
               </div>
-              <div className="text-right font-mono text-sm font-black text-[#24b8ff]">{formatNumber(row.value)}명</div>
+              <div className="text-right font-mono text-sm font-bold text-[#24b8ff]">{formatNumber(row.value)}명</div>
             </div>
 
             <div className="mt-3 grid gap-2">
@@ -1239,7 +1239,7 @@ function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationR
                   <div key={`${row.name}-${segment.name}`} className="grid gap-1">
                     <div className="flex items-center justify-between gap-3 text-xs">
                       <span className="truncate font-bold text-[#c8d5dc]">{segment.name}</span>
-                      <span className="shrink-0 font-mono font-black text-[#24b8ff]">
+                      <span className="shrink-0 font-mono font-bold text-[#24b8ff]">
                         {formatNumber(segment.value)}명 · {segmentPercent.toFixed(1)}%
                       </span>
                     </div>
@@ -1322,8 +1322,8 @@ function StatusCombinationView({
         <Panel title="분포 순위">
           <div className="grid h-full min-h-0 gap-3">
             <div className="rounded-md border border-white/[0.05] bg-white/[0.05] px-3 py-2">
-              <div className="text-xs font-black text-[#81949e]">조합분석</div>
-              <div className="mt-1 text-lg font-black text-white">{title}</div>
+              <div className="text-xs font-bold text-[#81949e]">조합분석</div>
+              <div className="mt-1 text-lg font-bold text-white">{title}</div>
               <div className="mt-2 font-mono text-xs font-bold text-[#24b8ff]">
                 {formatNumber(filteredRecords.length)}명 / {formatNumber(group.total)}명
               </div>
@@ -1576,22 +1576,22 @@ function CertificationSummaryGrid({ summary }: { summary: DashboardSummary }) {
           }`}
         >
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1 whitespace-nowrap text-[clamp(0.72rem,0.82vw,0.875rem)] font-black text-[#c7d5dc]">
+            <div className="min-w-0 flex-1 whitespace-nowrap text-xs font-semibold text-[#c7d5dc]">
               {indicator.title}
             </div>
             <span
-              className={`summary-status-badge shrink-0 rounded-md border px-2 py-1 text-[11px] font-black ${getStatusBadgeClass(indicator.status)}`}
+              className={`summary-status-badge shrink-0 rounded-md border px-2 py-1 text-[11px] font-bold ${getStatusBadgeClass(indicator.status)}`}
             >
               {indicator.status}
             </span>
           </div>
 
           <div className="summary-value-stack mt-3 grid gap-2">
-            <div className="summary-value min-w-0 font-mono text-[clamp(1.85rem,2.2vw,2.45rem)] font-black leading-none text-white">
+            <div className="summary-value min-w-0 font-mono text-3xl font-bold leading-none text-white">
               {indicator.value}
             </div>
             <div className="summary-count-ratio-row flex min-w-0 items-center justify-end rounded-md bg-black/14 px-2.5 py-1.5">
-              <span className="summary-count-ratio whitespace-nowrap text-right font-mono text-sm font-black leading-none text-[#24b8ff]">
+              <span className="summary-count-ratio whitespace-nowrap text-right font-mono text-sm font-bold leading-none text-[#24b8ff]">
                 {indicator.count}
               </span>
             </div>
@@ -1639,14 +1639,14 @@ function IndicatorCard({
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="text-sm font-black text-white">{indicator.title}</div>
-        <span className="shrink-0 rounded-md bg-black/28 px-2 py-1 text-[11px] font-black text-[#dce8ed]">
+        <div className="text-sm font-bold text-white">{indicator.title}</div>
+        <span className="shrink-0 rounded-md bg-black/28 px-2 py-1 text-[11px] font-bold text-[#dce8ed]">
           {indicator.status}
         </span>
       </div>
       <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-        <div className="font-mono text-4xl font-black leading-none text-white">{indicator.value}</div>
-        <div className="shrink-0 whitespace-nowrap font-mono text-sm font-black leading-none text-[#24b8ff]">
+        <div className="font-mono text-4xl font-bold leading-none text-white">{indicator.value}</div>
+        <div className="shrink-0 whitespace-nowrap font-mono text-sm font-bold leading-none text-[#24b8ff]">
           {indicator.count}
         </div>
       </div>
@@ -1667,8 +1667,8 @@ function CertificationDetail({ indicator }: { indicator: CertificationIndicator 
       <div className="rounded-md border border-white/[0.06] bg-white/[0.055] p-3">
         <div className="text-xs font-bold text-[#718691]">선택 지표</div>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
-          <div className="text-2xl font-black text-white">{indicator.title}</div>
-          <div className="font-mono text-3xl font-black text-[#24b8ff]">{indicator.value}</div>
+          <div className="text-2xl font-bold text-white">{indicator.title}</div>
+          <div className="font-mono text-3xl font-bold text-[#24b8ff]">{indicator.value}</div>
         </div>
       </div>
 
@@ -1679,15 +1679,15 @@ function CertificationDetail({ indicator }: { indicator: CertificationIndicator 
 
       <div className="grid min-h-0 gap-2 text-sm leading-6 text-[#c8d5dc]">
         <div className="rounded-md border border-white/[0.05] bg-black/12 px-3 py-2">
-          <span className="font-black text-white">산식</span>
+          <span className="font-bold text-white">산식</span>
           <span className="ml-2">{indicator.formula}</span>
         </div>
         <div className="rounded-md border border-white/[0.05] bg-black/12 px-3 py-2">
-          <span className="font-black text-white">증빙</span>
+          <span className="font-bold text-white">증빙</span>
           <span className="ml-2">{indicator.evidence}</span>
         </div>
         <div className="rounded-md border border-white/[0.05] bg-black/12 px-3 py-2">
-          <span className="font-black text-white">참고</span>
+          <span className="font-bold text-white">참고</span>
           <span className="ml-2">{indicator.note}</span>
         </div>
       </div>
@@ -1906,8 +1906,8 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
         <header className="dashboard-header shrink-0 border-b border-[#1579bf]/36 pb-2">
           <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <div className="dashboard-kicker text-xs font-black uppercase">KMUST Live Board</div>
-              <h1 className="dashboard-title mt-0.5 text-3xl font-black xl:text-4xl 2xl:text-[2.65rem]">
+              <div className="dashboard-kicker text-xs font-bold uppercase">KMUST Live Board</div>
+              <h1 className="dashboard-title mt-0.5 text-3xl font-bold xl:text-4xl">
                 외국인학생 현황 대시보드
               </h1>
             </div>

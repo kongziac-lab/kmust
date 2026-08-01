@@ -20,12 +20,12 @@ export default function AttentionPage() {
             <Link href="/" className="text-sm font-semibold text-[#22d3ee] transition-smooth hover:text-white">
               Dashboard
             </Link>
-            <h1 className="mt-3 text-4xl font-black tracking-tight text-[#f5f6ff]">주의 학생 상세</h1>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight text-[#f5f6ff]">주의 학생 상세</h1>
             <p className="mt-3 break-keep-all text-[#9a9fb5]">출결, 성적, 보험, 어학 기준으로 주의가 필요한 학생만 별도로 확인합니다.</p>
           </div>
           <div className="rounded-xl border border-[#23232f] bg-[#14141c] px-5 py-4 text-right">
             <div className="text-sm text-[#9a9fb5]">대상 학생</div>
-            <div className="font-mono text-3xl font-black text-[#22d3ee]">{summary.attentionStudents.length}</div>
+            <div className="font-mono text-3xl font-bold text-[#22d3ee]">{summary.attentionStudents.length}</div>
           </div>
         </header>
 
