@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { dashboardModes, type Mode } from "@/lib/dashboard-modes";
 import type { DashboardSummary } from "@/lib/summary";
 
@@ -363,6 +363,56 @@ function MiniStat({
       ) : null}
     </div>
   );
+}
+
+/**
+ * How many whole rows fit the container, so a fixed-height board never shows a
+ * row sliced in half at the panel edge. Rows within one list are uniform, so
+ * pitch (first row height + gap) is enough and stays stable: the answer does
+ * not depend on how many rows are currently rendered, which keeps the count
+ * from oscillating and lets it grow back when the board gets taller.
+ *
+ * Below lg the board scrolls instead of being height-capped, so clientHeight is
+ * the full content height and this naturally returns `max`.
+ */
+function useFittedRowCount(max: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [count, setCount] = useState(max);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) {
+      return;
+    }
+
+    const measure = () => {
+      const first = el.firstElementChild as HTMLElement | null;
+      const available = el.clientHeight;
+
+      if (!first || available === 0) {
+        return;
+      }
+
+      const gap = Number.parseFloat(getComputedStyle(el).rowGap) || 0;
+      const pitch = first.offsetHeight + gap;
+
+      if (pitch <= 0) {
+        return;
+      }
+
+      const fits = Math.floor((available + gap) / pitch);
+      setCount(Math.max(1, Math.min(max, fits)));
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [max]);
+
+  return { ref, count };
 }
 
 function EmptyState({
@@ -998,18 +1048,19 @@ function getStatusDetailConfig(group: StatusGroup, mode: Mode) {
 }
 
 function StatusDetailRows({ items, limit }: { items: DistributionItem[]; limit: number }) {
-  const shown = items.slice(0, limit);
+  const { ref, count } = useFittedRowCount(limit);
+  const shown = items.slice(0, count);
   const total = items.reduce((sum, item) => sum + item.value, 0);
   const max = Math.max(...shown.map((item) => item.value), 1);
 
-  if (shown.length === 0) {
+  if (items.length === 0) {
     return (
       <EmptyState hint="선택한 조건의 결과가 없습니다." title="대상 없음" />
     );
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-2 overflow-y-auto pr-1">
+    <div ref={ref} className="grid h-full min-h-0 content-start gap-2 overflow-y-auto pr-1">
       {shown.map((item, index) => {
         const percent = total === 0 ? 0 : (item.value / total) * 100;
 
@@ -1204,16 +1255,17 @@ function StatusCombinationControls({
 }
 
 function CombinationDetailRows({ rows, total, limit = 10 }: { rows: CombinationRow[]; total: number; limit?: number }) {
-  const shown = rows.slice(0, limit);
+  const { ref, count } = useFittedRowCount(limit);
+  const shown = rows.slice(0, count);
 
-  if (shown.length === 0) {
+  if (rows.length === 0) {
     return (
       <EmptyState hint="선택한 조건의 결과가 없습니다." title="대상 없음" />
     );
   }
 
   return (
-    <div className="grid h-full min-h-0 gap-2 overflow-y-auto pr-1">
+    <div ref={ref} className="grid h-full min-h-0 content-start gap-2 overflow-y-auto pr-1">
       {shown.map((row, index) => {
         const rowPercent = total === 0 ? 0 : (row.value / total) * 100;
 
