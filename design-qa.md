@@ -1,32 +1,78 @@
 # Design QA
 
-## Source Visual Truth
+## 기준 (Source of Truth)
 
-- Reference: `/Volumes/halan/MacOffload/kdh-home/Developer/GitHub/kmust/output/design-qa/source-insurance-dashboard-reference.png`
-- Target implementation: `/Volumes/halan/MacOffload/kdh-home/Developer/GitHub/kmust/output/design-qa/implementation-kmust-dashboard-overview.png`
-- Comparison image: `/Volumes/halan/MacOffload/kdh-home/Developer/GitHub/kmust/output/design-qa/comparison-reference-vs-implementation-small.png`
-- Viewport: 1540 x 1024
-- State: dashboard monitor, `총괄보기`
+- 디자인 시스템: [`DESIGN.md`](DESIGN.md) — 의도
+- 토큰 단일 출처: `src/app/globals.css` 의 `:root` — 값이 충돌하면 이쪽이 이긴다
+- 검증 뷰포트: 390 (phone) / 1540 (wall board)
+- 검증 상태: `총괄보기`, `출결상황`, seed 데이터 경로
 
-## Checks
+## 검증 방법
 
-- The dashboard root exposes `data-visual-reference="insurance-dashboard"` and the electric dashboard shell layers are present.
-- The background now uses a dark navy gradient, subtle grid texture, scanline overlay, and lower horizon glow inspired by the source image.
-- Headings, panel titles, buttons, and metric numbers use higher-contrast blue/cyan styling with controlled glow.
-- Panels and metric tiles use thin blue borders, dark glass surfaces, and inset highlight lines without horizontal overflow.
-- Certification percentage and person-count values remain separated on one line-height and do not overlap.
+```bash
+npx tsc --noEmit
+npm run lint
+npm test
+```
 
-## Evidence
+`npm test`는 `next build` → `next start` → 통합 테스트 19건 → 서버 종료까지 자동으로 수행한다
+(`scripts/run-tests.mjs`). 별도로 dev 서버를 띄워둘 필요가 없고, 이미 띄워둔 dev 서버가 있어도
+충돌하지 않는다. Next 16은 같은 디렉터리에서 dev 서버 중복 실행을 막지만 `next dev`는 `.next/dev`,
+`next build`는 `.next`에 출력하기 때문이다.
 
-- Browser DOM/layout audit at `http://127.0.0.1:3001` reported no document or stage overflow.
-- Certification card titles were checked for clipping; no title clipping was detected.
-- Production build and production local server passed the dashboard test harness.
+## 결과 (2026-08-01)
 
-## Findings
+| 항목 | 결과 |
+|---|---|
+| `tsc --noEmit` | 통과, 에러 0 |
+| `eslint` | 통과, 경고 0 |
+| 통합 테스트 | 19/19 통과 |
+| 브라우저 콘솔 | 에러 없음 |
 
-- No blocking visual issues found.
-- The implementation intentionally preserves the KMUST operational layout and Korean dashboard content instead of copying the reference chart composition directly.
+## 체크 항목
 
-## Final Result
+### 시각 시스템 (DESIGN.md 대조)
+
+- 단일 액센트: 모드 버튼 활성 상태가 모드와 무관하게 `--accent` 하나로 통일된다. 타일별 무지개 없음.
+- 의미색은 신호 전용: `--ok/--warn/--bad/--info` 가 출결 범례, 경고 타일(`data-tone`), 인증 위험
+  카드(`data-status="관리 필요"`), 갱신 중단 표시에만 나타난다. 중성 KPI는 흰 숫자.
+- 깊이: 표면 3계층 + 헤어라인 + 상단 인셋 하이라이트 + 소프트 그림자. 글로우·스캔라인·그리드 없음.
+- 범례는 6px 점(`.attendance-dot`)이며 카드 좌측 색 보더는 쓰지 않는다.
+- 숫자는 tabular figures 로 세로 정렬된다.
+
+### 레이아웃 / 반응형
+
+- 1540: 고정 월 보드. 문서 스크롤 0, 가로 오버플로 0. 모드 3행이 모두 한 줄에 들어가 스크롤되지 않는다.
+- 390: 가로 오버플로 0. KPI 2열. 헤더 메타가 갱신 시각 1열로 축약된다.
+- 390: 모드 버튼 13개 전부 44px 이상 (측정값: 44px 미만 0개).
+- 390: 모드 3행이 각각 가로 스크롤되며(365/278, 403/299, 407/299), 우측 페이드로 더 있음을 알린다.
+  페이드는 `<lg` 에서만 적용되고 데스크톱에서는 `mask-image: none`.
+
+### 상태 (States)
+
+- **로딩:** 스켈레톤 없음. 10초 폴링마다 플래시가 나지 않는다. 첫 진입만 `reveal` 페이드.
+- **에러 (stale-on-error):** 폴링을 강제 실패시켜 검증. 2회 연속 실패 시 갱신 타일이
+  `data-freshness="stale"` 로 바뀌고 `--warn` 테두리 + 점 + "갱신 중단"(`role="status"`)이 나타난다.
+  마지막 유효 데이터는 그대로 유지되고 빈 화면으로 전환되지 않는다. 폴링이 복구되면 표시가 자동으로
+  사라지고 갱신 시각이 다시 흐른다 (08:01 → 08:03 확인).
+- **빈:** 빈 응답을 주입해 검증. 총괄보기 분포 3개 패널이 "분포 없음", 출결상황이 "최근 수업 없음"
+  `EmptyState` 로 렌더된다. 점선 박스가 아니라 `--surface-2` + 글리프 + 문맥 문장.
+- **부분:** 조합/필터에서 0건인 목록만 `EmptyState` 로 바뀌고 나머지 패널은 유지된다.
+
+### 접근성 / 모션
+
+- `@media (prefers-reduced-motion: reduce)` 에서 `reveal`, `transition-smooth`, `absence-roll`,
+  타일 hover 이동, 갱신 중단 점의 펄스가 모두 해제된다.
+- 갱신 중단 표시는 색에만 의존하지 않는다. 점 + "갱신 중단" 문구 + `role="status"` 를 함께 쓴다.
+
+## 최종 결과
 
 passed
+
+## 이력
+
+- 2026-08-01: 모노크롬 시스템(`c1d3b0e`) 기준으로 전면 재작성. stale 표시, 빈 상태 2곳,
+  모바일 스크롤 어포던스, 자동화된 테스트 러너를 추가하고 검증.
+- 2026-07-03: 최초 작성. 당시의 "electric" 시스템(네이비 그라디언트, 스캔라인, 글로우, 글라스 표면)
+  기준이었다. 그 시스템은 `cb543b1`(평탄화)과 `c1d3b0e`(모노크롬 전환)로 제거되었고 현재 `DESIGN.md`가
+  명시적으로 금지한다. `output/design-qa/` 의 PNG 3장은 그 시기의 자료이며 현재 화면과 일치하지 않는다.

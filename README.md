@@ -33,6 +33,11 @@ npm run db:import
 ```bash
 npm run lint
 npm run build
+npm test
 ```
+
+`npm test`는 `next build` → `next start` → 대시보드 통합 테스트 → 서버 종료를 한 번에 수행합니다.
+서버를 미리 띄워둘 필요가 없고, 이미 `npm run dev`가 돌고 있어도 충돌하지 않습니다. 빠른 반복은
+`npm test -- --dev`, 이미 떠 있는 서버를 대상으로 하려면 `DASHBOARD_URL=http://127.0.0.1:3000 npm test`.
 
 대시보드, 현황 분석, 주의 학생 페이지는 동적 렌더링으로 설정되어 요청 시점의 SQLite DB를 조회합니다.

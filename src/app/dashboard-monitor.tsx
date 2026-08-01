@@ -54,6 +54,9 @@ const statusModeSet = new Set<Mode>(["status", "program", "nationality", "depart
 const certificationModeSet = new Set<Mode>(["certification", "insurance", "topik", "dropout", "counseling"]);
 const dashboardSummaryEndpoint = "/api/dashboard/summary";
 const dashboardSummaryPollingMs = 10_000;
+// One dropped poll is network noise. Two in a row means the board is showing
+// numbers nobody is refreshing, and an unattended wall display has to say so.
+const staleAfterFailedPolls = 2;
 const modeButtonTones: Record<Mode, ModeButtonTone> = {
   overview: "cyan",
   attendance: "blue",
@@ -295,7 +298,7 @@ function ModeGroup({
       <div className={`mode-group-badge mode-group-badge-${tone} shrink-0 text-xs font-black`}>
         {title}
       </div>
-      <div className="flex min-w-0 gap-2 overflow-x-auto pb-1">
+      <div className="mode-scroll flex min-w-0 gap-2 overflow-x-auto pb-1">
         {items.map((item) => (
           <ModeButton
             key={item.mode}
@@ -333,11 +336,31 @@ function MetricTile({
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({
+  label,
+  value,
+  status,
+}: {
+  label: string;
+  value: string;
+  status?: "stale";
+}) {
   return (
-    <div className="tech-stat rounded-md border border-[#167fc9]/24 bg-[#081827]/78 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div
+      data-freshness={status}
+      className="tech-stat rounded-md border border-[#167fc9]/24 bg-[#081827]/78 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+    >
       <div className="text-xs font-semibold text-[#7f949f]">{label}</div>
       <div className="mt-1.5 font-mono text-lg font-black leading-none text-white">{value}</div>
+      {status === "stale" ? (
+        <div
+          role="status"
+          className="stat-stale mt-1.5 flex items-center justify-end gap-1.5 text-xs font-semibold"
+        >
+          <span className="stat-stale-dot" aria-hidden="true" />
+          갱신 중단
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -580,6 +603,11 @@ function ProgressRows({
   showPercent?: boolean;
 }) {
   const shown = items.slice(0, limit);
+
+  if (shown.length === 0) {
+    return <EmptyState hint="집계된 분포 항목이 없습니다." title="분포 없음" />;
+  }
+
   const max = Math.max(...shown.map((item) => item.value), 1);
   const total = items.reduce((sum, item) => sum + item.value, 0);
 
@@ -692,9 +720,15 @@ function AbsenceObservationList({ summary, limit = 8 }: { summary: DashboardSumm
 }
 
 function RecentClasses({ summary, limit = 6 }: { summary: DashboardSummary; limit?: number }) {
+  const sessions = summary.recentClasses.slice(0, limit);
+
+  if (sessions.length === 0) {
+    return <EmptyState hint="아직 집계된 수업 세션이 없습니다." title="최근 수업 없음" />;
+  }
+
   return (
     <div className="grid h-full min-h-0 content-between gap-2">
-      {summary.recentClasses.slice(0, limit).map((session) => (
+      {sessions.map((session) => (
         <div
           key={session.id}
           className="flex min-h-0 items-center justify-between gap-3 rounded-md border border-white/[0.05] bg-white/[0.055] px-3 py-2"
@@ -1767,6 +1801,7 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
   const [combinationFilterDimension, setCombinationFilterDimension] = useState<StatusFilterDimension>("all");
   const [combinationFilterValue, setCombinationFilterValue] = useState("");
   const [liveSummary, setLiveSummary] = useState(summary);
+  const [summaryStale, setSummaryStale] = useState(false);
   const generatedAt = formatSeoulDateTime(liveSummary.generatedAt);
 
   useEffect(() => {
@@ -1782,6 +1817,7 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
   useEffect(() => {
     let stopped = false;
     let activeController: AbortController | null = null;
+    let consecutiveFailures = 0;
 
     async function refreshSummary() {
       if (activeController) {
@@ -1804,11 +1840,19 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
         const nextSummary = (await response.json()) as DashboardSummary;
 
         if (!stopped) {
+          consecutiveFailures = 0;
           setLiveSummary(nextSummary);
+          setSummaryStale(false);
         }
       } catch (error) {
         if (!stopped && !(error instanceof DOMException && error.name === "AbortError")) {
           console.error(error);
+          consecutiveFailures += 1;
+
+          // Keep the last good data on screen, but stop pretending it is live.
+          if (consecutiveFailures >= staleAfterFailedPolls) {
+            setSummaryStale(true);
+          }
         }
       } finally {
         if (activeController === controller) {
@@ -1870,7 +1914,11 @@ export function DashboardMonitor({ activeMode: initialActiveMode, summary }: { a
             <div className="header-meta grid grid-cols-3 gap-2 text-right sm:flex sm:items-end sm:justify-end">
               <MiniStat label="모드" value={getModeTitle(activeMode)} />
               <MiniStat label="자료" value={liveSummary.dataSource.type === "sqlite" ? "DB" : "SEED"} />
-              <MiniStat label="갱신" value={generatedAt} />
+              <MiniStat
+                label="갱신"
+                value={generatedAt}
+                status={summaryStale ? "stale" : undefined}
+              />
             </div>
           </div>
 

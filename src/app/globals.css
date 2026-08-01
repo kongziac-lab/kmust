@@ -146,6 +146,42 @@ input {
   letter-spacing: -0.02em;
 }
 
+/* ---- Freshness: stale-on-error has to be visible, not just survivable ----- */
+
+/* The board keeps the last good numbers when polling fails. Left unmarked that
+   reads as live data, so the 갱신 stat carries a muted warn signal instead. */
+.tech-stat[data-freshness="stale"] {
+  border-color: color-mix(in srgb, var(--warn) 34%, var(--border)) !important;
+  background: color-mix(in srgb, var(--warn) 7%, var(--surface-1)) !important;
+}
+
+.tech-stat[data-freshness="stale"] .font-mono {
+  color: var(--warn);
+}
+
+.stat-stale {
+  color: var(--warn);
+}
+
+.stat-stale-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--warn);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 18%, transparent);
+  animation: stalePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes stalePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
 /* ---- Mode navigation: monochrome clusters, single accent for active ------- */
 
 .mode-group-badge {
@@ -195,6 +231,15 @@ input {
   border-color: transparent;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   box-shadow: 0 3px 14px -5px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Touch has no hover, so a scrollable mode row needs a visible edge cue.
+   Desktop fits every button, so the fade only exists below lg. */
+@media (max-width: 1023px) {
+  .mode-scroll {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent);
+  }
 }
 
 /* ---- Surfaces: 3 elevation tiers, hairline + inset highlight + soft shadow - */
@@ -546,5 +591,10 @@ input {
 
   .metric-tile:hover {
     transform: none;
+  }
+
+  /* The dot stays warn-colored; only the pulse goes away. */
+  .stat-stale-dot {
+    animation: none;
   }
 }
