@@ -66,10 +66,15 @@ body {
   font-family: "Pretendard Variable", "Pretendard", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Typeface only. These rules are unlayered, so they beat Tailwind's layered
+   utilities: `font: inherit` was also resetting size and weight, which silently
+   killed every size and weight utility on a button (mode buttons rendered
+   16px/400 instead of the 14px/700 they ask for). Size and weight are the
+   utilities' job, so this rule must not touch them. */
 button,
 select,
 input {
-  font: inherit;
+  font-family: inherit;
 }
 
 /* Numeric columns align via tabular figures; one Korean typeface everywhere. */
